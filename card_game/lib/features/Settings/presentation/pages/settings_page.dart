@@ -1,11 +1,11 @@
+import 'package:card_game/Shared/widgets/app_surface.dart';
+import 'package:card_game/Shared/widgets/settings_toggle_row.dart';
+import 'package:card_game/core/constant/app_dimensions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../core/constants/app_dimensions.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/theme_cubit.dart';
-import '../../../../shared/widgets/app_surface.dart';
-import '../../../../shared/widgets/settings_toggle_row.dart';
 import '../../bloc/settings_cubit.dart';
 import '../../bloc/settings_state.dart';
 

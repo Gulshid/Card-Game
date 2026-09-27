@@ -1,10 +1,10 @@
+import 'package:card_game/features/Settings/bloc/settings_cubit.dart';
 import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../audio/audio_service.dart';
 import '../services/haptics_service.dart';
 import '../theme/theme_cubit.dart';
-import '../../features/settings/bloc/settings_cubit.dart';
 
 /// Global service locator. Kept as plain `get_it` (no code generation)
 /// so the project builds immediately without a `build_runner` step.

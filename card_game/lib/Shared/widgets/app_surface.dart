@@ -1,7 +1,6 @@
+import 'package:card_game/core/constant/app_dimensions.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import '../../core/constants/app_dimensions.dart';
 import '../../core/theme/app_colors.dart';
 
 /// A themed, elevated container — the base for every card-like block

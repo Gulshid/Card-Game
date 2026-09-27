@@ -1,11 +1,11 @@
+import 'package:card_game/Shared/widgets/primary_button.dart';
+import 'package:card_game/core/constant/app_dimensions.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/constants/app_dimensions.dart';
 import '../../../../core/routes/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../../shared/widgets/primary_button.dart';
 
 /// Home shell. This proves the Phase 01 skeleton (routing, theme, DI)
 /// works end-to-end. The full home screen — daily reward banner,

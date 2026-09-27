@@ -1,9 +1,10 @@
+import 'package:card_game/features/Settings/presentation/pages/settings_page.dart';
+import 'package:card_game/features/Splash/presentation/pages/splash_page.dart';
+import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/home/presentation/pages/home_page.dart';
 import '../../features/home/presentation/pages/ui_kit_showcase_page.dart';
-import '../../features/settings/presentation/pages/settings_page.dart';
-import '../../features/splash/presentation/pages/splash_page.dart';
 
 /// Route names as constants so screens navigate by name, never by
 /// hand-typed path string (typo-proof, refactor-safe).

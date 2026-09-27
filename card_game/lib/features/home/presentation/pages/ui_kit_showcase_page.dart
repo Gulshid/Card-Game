@@ -1,14 +1,15 @@
+import 'package:card_game/Shared/widgets/app_surface.dart';
+import 'package:card_game/Shared/widgets/loading_indicator.dart';
+import 'package:card_game/Shared/widgets/primary_button.dart';
+import 'package:card_game/Shared/widgets/settings_toggle_row.dart';
+import 'package:card_game/Shared/widgets/stat_tile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import '../../../../core/constants/app_dimensions.dart';
+import '../../../../core/constant/app_dimensions.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../../shared/widgets/app_surface.dart';
-import '../../../../shared/widgets/loading_indicator.dart';
-import '../../../../shared/widgets/primary_button.dart';
-import '../../../../shared/widgets/settings_toggle_row.dart';
-import '../../../../shared/widgets/stat_tile.dart';
+
 
 /// Internal-only screen (never shipped) that renders every shared
 /// widget in both themes for visual QA. This is Phase 02's exit
