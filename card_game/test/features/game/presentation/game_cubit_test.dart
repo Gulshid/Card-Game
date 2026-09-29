@@ -5,7 +5,6 @@ import 'package:card_game/features/game/domain/ai/ai_difficulty.dart';
 import 'package:card_game/features/game/domain/engine/spades_rules_engine.dart';
 import 'package:card_game/features/game/domain/models/game_phase.dart';
 import 'package:card_game/features/game/domain/models/move.dart';
-import 'package:card_game/features/game/domain/models/seat.dart';
 import 'package:card_game/features/game/presentation/bloc/game_cubit.dart';
 import 'package:card_game/features/game/presentation/bloc/game_ui_state.dart';
 import 'package:flutter_test/flutter_test.dart';
