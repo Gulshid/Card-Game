@@ -6,12 +6,28 @@ import '../models/move.dart';
 import 'spades_rules_engine.dart';
 
 /// Picks a uniformly random *legal* move for whoever's turn it is.
-/// Deliberately reusable beyond testing: Phase 06's Easy bot is
-/// exactly this function wired into the UI's turn loop, so the
-/// "random legal move" behavior only has to be correct once.
-Move chooseRandomLegalMove(GameState state, Random rng) {
+///
+/// Bids are drawn from [minBid]..[maxBid] (default 2..3), **not** the full
+/// 0..13 the engine would accept. This is deliberate: a random bot bidding
+/// uniformly over 0..13 averages a ~13-trick team target while winning
+/// ~6.5 tricks, so every round is a large failed-bid penalty and neither
+/// team ever climbs to 500 — the match simply never ends. (Measured: 0 of
+/// 50 such games finished.) Bids of 2..3 are made most rounds, so scores
+/// drift upward and matches finish in ~27 rounds on average.
+///
+/// The engine still accepts any 0..13 bid — that's covered by the
+/// `bidding` tests in spades_rules_engine_test.dart — this range only
+/// shapes what the *simulator* chooses.
+Move chooseRandomLegalMove(
+  GameState state,
+  Random rng, {
+  int minBid = 2,
+  int maxBid = 3,
+}) {
   final List<Move> candidates = switch (state.phase) {
-    GamePhase.bidding => [for (int bid = 0; bid <= 13; bid++) BidMove(seat: state.turn, tricksBid: bid)],
+    GamePhase.bidding => [
+        for (int bid = minBid; bid <= maxBid; bid++) BidMove(seat: state.turn, tricksBid: bid),
+      ],
     GamePhase.playing => [
         for (final card in state.hands[state.turn] ?? const []) PlayCardMove(seat: state.turn, card: card),
       ],
@@ -25,15 +41,12 @@ Move chooseRandomLegalMove(GameState state, Random rng) {
 
 /// Plays an entire match to completion using only random legal moves,
 /// looping through rounds until `GamePhase.matchOver`. Used by the
-/// engine's own test suite to stress-test thousands of realistic
-/// games rather than hand-written scenarios alone; also useful as a
-/// quick manual sanity check (`dart run` a small script that calls
-/// this and prints `state.teamScores`).
+/// engine's own test suite to stress-test many realistic games rather
+/// than hand-written scenarios alone.
 ///
 /// Returns the final `GameState`; throws if the match does not
-/// terminate within `maxRounds`, which would indicate a scoring or
-/// win-condition bug rather than a slow-but-valid game (a real match
-/// realistically ends well under 50 rounds).
+/// terminate within `maxRounds` (200 is ~3x the longest game seen in
+/// 200 simulated seeds).
 GameState simulateFullGame({int? seed, int maxRounds = 200}) {
   final Random rng = seed == null ? Random() : Random(seed);
   GameState state = SpadesRulesEngine.newMatch(seed: seed);
