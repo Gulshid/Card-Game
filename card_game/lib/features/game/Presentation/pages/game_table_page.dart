@@ -3,7 +3,6 @@ import 'package:card_game/core/services/haptics_service.dart';
 import 'package:card_game/features/game/domain/ai/ai_difficulty.dart';
 import 'package:card_game/features/game/domain/models/game_phase.dart';
 import 'package:card_game/features/game/domain/models/move.dart';
-import 'package:card_game/features/game/domain/models/playing_card.dart';
 import 'package:card_game/features/game/domain/models/seat.dart';
 import 'package:card_game/features/game/domain/engine/spades_rules_engine.dart';
 import 'package:flutter/material.dart';
