@@ -1,6 +1,5 @@
 import 'package:card_game/features/game/domain/models/playing_card.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../utils/hand_sorter.dart';
 import 'flippable_card.dart';
