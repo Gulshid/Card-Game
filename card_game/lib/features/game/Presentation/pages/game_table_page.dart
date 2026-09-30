@@ -1,3 +1,4 @@
+import 'package:card_game/core/audio/audio_service.dart';
 import 'package:card_game/core/di/injection_container.dart';
 import 'package:card_game/core/services/haptics_service.dart';
 import 'package:card_game/features/game/domain/ai/ai_difficulty.dart';
@@ -13,16 +14,19 @@ import 'package:go_router/go_router.dart';
 import '../bloc/game_cubit.dart';
 import '../bloc/game_ui_state.dart';
 import '../widgets/bid_overlay.dart';
+import '../widgets/deal_animation_overlay.dart';
 import '../widgets/match_result_sheet.dart';
 import '../widgets/opponent_hand_view.dart';
 import '../widgets/player_hand_fan.dart';
+import '../widgets/pulse_glow.dart';
 import '../widgets/round_summary_sheet.dart';
 import '../widgets/trick_area.dart';
 import '../widgets/turn_score_hud.dart';
 
 /// The felt game table. Hosts its own [GameCubit] — one match's worth of
 /// state — created fresh every time this screen is pushed, and disposed
-/// automatically when it's popped.
+/// automatically when it's popped (which also stops the table music —
+/// see `GameCubit.close`).
 ///
 /// Deliberately **not** wrapped in `ScreenUtilInit`'s scaling like most
 /// other screens (see the note in `main.dart`): a card table needs to
@@ -37,14 +41,41 @@ class GameTablePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => GameCubit(haptics: sl<HapticsService>(), difficulty: difficulty)..start(),
+      create: (_) => GameCubit(
+        haptics: sl<HapticsService>(),
+        audio: sl<AudioService>(),
+        difficulty: difficulty,
+      )..start(),
       child: const _GameTableView(),
     );
   }
 }
 
-class _GameTableView extends StatelessWidget {
+class _GameTableView extends StatefulWidget {
   const _GameTableView();
+
+  @override
+  State<_GameTableView> createState() => _GameTableViewState();
+}
+
+class _GameTableViewState extends State<_GameTableView> {
+  int? _lastDealtRound;
+  bool _showDealAnimation = false;
+
+  /// Shows the deal flourish once per round — including the very first
+  /// one — by comparing the round number on every rebuild rather than
+  /// hooking into `GameCubit` directly, so this stays a pure
+  /// presentation-layer concern (Phase 07 shouldn't need to touch the
+  /// cubit's state shape).
+  void _maybeTriggerDealAnimation(int roundNumber) {
+    if (_lastDealtRound == roundNumber) return;
+    _lastDealtRound = roundNumber;
+    // Defer the setState to after this build so we don't call it
+    // mid-build.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) setState(() => _showDealAnimation = true);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -60,6 +91,7 @@ class _GameTableView extends StatelessWidget {
           },
           builder: (context, state) {
             final cubit = context.read<GameCubit>();
+            _maybeTriggerDealAnimation(state.game.roundNumber);
 
             return Stack(
               children: [
@@ -92,6 +124,14 @@ class _GameTableView extends StatelessWidget {
                     uiState: state,
                     onPlayAgain: cubit.restart,
                     onHome: () => context.pop(),
+                  ),
+                if (_showDealAnimation)
+                  DealAnimationOverlay(
+                    key: ValueKey('deal-${state.game.roundNumber}'),
+                    humanCards: state.game.hands[kHumanSeat] ?? const [],
+                    onComplete: () {
+                      if (mounted) setState(() => _showDealAnimation = false);
+                    },
                   ),
               ],
             );
@@ -158,12 +198,17 @@ class _OpponentSlot extends StatelessWidget {
     final isTurn = uiState.game.turn == seat;
     final handCount = uiState.game.hands[seat]?.length ?? 0;
 
-    final label = Text(
-      isTurn && uiState.isBotThinking ? '$name…' : name,
-      style: TextStyle(
-        color: isTurn ? const Color(0xFFC79A3D) : Colors.white70,
-        fontWeight: isTurn ? FontWeight.w700 : FontWeight.w400,
-        fontSize: 11.sp,
+    // Pulses gently while it's this seat's turn, so the eye is drawn to
+    // who's acting without anything jarring — stays static otherwise.
+    final label = PulseGlow(
+      active: isTurn,
+      child: Text(
+        isTurn && uiState.isBotThinking ? '$name…' : name,
+        style: TextStyle(
+          color: isTurn ? const Color(0xFFC79A3D) : Colors.white70,
+          fontWeight: isTurn ? FontWeight.w700 : FontWeight.w400,
+          fontSize: 11.sp,
+        ),
       ),
     );
 
