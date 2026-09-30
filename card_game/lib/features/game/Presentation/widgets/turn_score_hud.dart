@@ -6,7 +6,9 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../bloc/game_ui_state.dart';
 
 /// Top bar over the table: round number, both teams' running score and
-/// bag count, and whose turn it is.
+/// bag count, and whose turn it is. Score changes count up rather than
+/// jump, so a round's outcome reads as a change happening, not just a
+/// new number appearing.
 class TurnScoreHud extends StatelessWidget {
   const TurnScoreHud({required this.uiState, super.key});
 
@@ -58,7 +60,11 @@ class _TeamScore extends StatelessWidget {
       crossAxisAlignment: alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
       children: [
         Text(label, style: AppTextStyles.caption(Colors.white60)),
-        Text('$score', style: AppTextStyles.h2(const Color(0xFFC79A3D))),
+        TweenAnimationBuilder<int>(
+          tween: IntTween(begin: score, end: score),
+          duration: const Duration(milliseconds: 500),
+          builder: (context, value, _) => Text('$value', style: AppTextStyles.h2(const Color(0xFFC79A3D))),
+        ),
         Text('$bags bags', style: AppTextStyles.caption(Colors.white38)),
       ],
     );
