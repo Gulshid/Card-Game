@@ -1,7 +1,7 @@
 import 'package:card_game/features/Settings/presentation/pages/settings_page.dart';
 import 'package:card_game/features/Splash/presentation/pages/splash_page.dart';
 import 'package:card_game/features/game/domain/ai/ai_difficulty.dart';
-import 'package:card_game/features/game/presentation/pages/game_table_page.dart';
+import 'package:card_game/features/game/Presentation/pages/game_table_page.dart';
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
