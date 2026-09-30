@@ -1,6 +1,6 @@
 import 'package:card_game/Shared/widgets/primary_button.dart';
 import 'package:card_game/core/constant/app_dimensions.dart';
-import 'package:card_game/features/game/presentation/widgets/difficulty_select_sheet.dart';
+import 'package:card_game/features/game/Presentation/widgets/difficulty_select_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
