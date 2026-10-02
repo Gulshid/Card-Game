@@ -57,6 +57,10 @@ dependencies:
   # Audio (Phase 01 service; SFX/music assets land in Phase 08)
   audioplayers: ^6.0.0
 
+  # hive local db
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+
 
 dev_dependencies:
   flutter_test:
