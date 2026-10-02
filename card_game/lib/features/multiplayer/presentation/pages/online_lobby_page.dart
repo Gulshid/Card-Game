@@ -296,7 +296,7 @@ class _RoomCard extends StatelessWidget {
           SizedBox(height: AppSpacing.md),
           if (room.iAmHost)
             PrimaryButton(
-              label: room.humanCount < 4 ? 'Start with bots in empty seats' : 'Start match',
+              label: room.humanCount < 4 ? 'Start (bots fill empty seats)' : 'Start match',
               icon: Icons.play_arrow_rounded,
               onPressed: onStart,
             )

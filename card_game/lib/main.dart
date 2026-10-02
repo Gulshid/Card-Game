@@ -18,6 +18,9 @@ Future<void> main() async {
   await initDependencies();
   runApp(const SpadesRoyaleApp());
 }
+// 1. terminal 1 :dart run server/spades_server.dart
+
+// 2. terminal 2 : flutter run --dart-define=SPADES_SERVER_URL=ws://localhost:8080/ws
 
 class SpadesRoyaleApp extends StatefulWidget {
   const SpadesRoyaleApp({super.key});

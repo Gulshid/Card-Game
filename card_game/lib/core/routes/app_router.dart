@@ -10,7 +10,6 @@ import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/home/presentation/pages/home_page.dart';
-import '../../features/home/presentation/pages/ui_kit_showcase_page.dart';
 
 /// Route names as constants so screens navigate by name, never by
 /// hand-typed path string (typo-proof, refactor-safe).
@@ -18,7 +17,6 @@ abstract class AppRoute {
   static const String splash = 'splash';
   static const String home = 'home';
   static const String settings = 'settings';
-  static const String uiKit = 'ui-kit';
   static const String table = 'table'; // Phase 05
   static const String profile = 'profile'; // Phase 09
   static const String onlineLobby = 'online-lobby'; // Phase 10
@@ -62,11 +60,6 @@ abstract class AppRouter {
           path: '/settings',
           name: AppRoute.settings,
           builder: (context, state) => const SettingsPage(),
-        ),
-        GoRoute(
-          path: '/ui-kit',
-          name: AppRoute.uiKit,
-          builder: (context, state) => const UiKitShowcasePage(),
         ),
         GoRoute(
           path: '/table',

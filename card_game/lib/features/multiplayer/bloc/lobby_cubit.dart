@@ -78,6 +78,7 @@ class LobbyCubit extends Cubit<LobbyState> {
       case MatchStarted():
         emit(state.copyWith(phase: LobbyPhase.inMatch, matchNonce: state.matchNonce + 1, clearRoom: true));
       case ServerError():
+        // ignore: unnecessary_cast
         _say(_friendly(event as ServerError));
       case SnapshotReceived():
       case MatchEnded():

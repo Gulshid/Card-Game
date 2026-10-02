@@ -175,12 +175,6 @@ class HomePage extends StatelessWidget {
               icon: Icons.public,
               onPressed: () => context.pushNamed(AppRoute.onlineLobby),
             ),
-            SizedBox(height: AppSpacing.sm),
-            PrimaryButton(
-              label: 'View UI kit',
-              icon: Icons.palette_outlined,
-              onPressed: () => context.pushNamed(AppRoute.uiKit),
-            ),
           ],
         ),
       ),

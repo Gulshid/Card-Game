@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:web_socket_channel/web_socket_channel.dart';
 
+
 /// The smallest socket the session needs. Exists so `OnlineSession` can be
 /// unit-tested with an in-memory fake instead of a real network.
 abstract interface class OnlineSocket {

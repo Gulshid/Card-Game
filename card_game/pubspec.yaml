@@ -61,10 +61,15 @@ dependencies:
   hive: ^2.2.3
   hive_flutter: ^1.1.0
 
+  # web socket channel
+  web_socket_channel: ^3.0.1  
+
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  shelf: ^1.4.1                  # server only (server/spades_server.dart)
+  shelf_web_socket: ^2.0.0       # server only
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
