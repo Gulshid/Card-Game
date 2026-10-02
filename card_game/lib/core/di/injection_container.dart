@@ -5,6 +5,9 @@ import 'package:card_game/features/Settings/bloc/settings_cubit.dart';
 import 'package:card_game/features/game/data/saved_match_repository_impl.dart';
 import 'package:card_game/features/game/domain/repositories/saved_match_repository.dart';
 import 'package:card_game/features/home/bloc/resume_match_cubit.dart';
+import 'package:card_game/features/multiplayer/data/online_prefs.dart';
+import 'package:card_game/features/multiplayer/data/online_session.dart';
+import 'package:card_game/features/multiplayer/data/online_socket.dart';
 import 'package:card_game/features/profile/data/profile_repository_impl.dart';
 import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -50,5 +53,19 @@ Future<void> initDependencies() async {
   sl.registerLazySingleton<ProfileCubit>(() => ProfileCubit(repository: sl()));
   sl.registerLazySingleton<ResumeMatchCubit>(() => ResumeMatchCubit(repository: sl()));
 
-  // Phase 10 will add: registerLazySingleton<AuthCubit>(...), matchmaking client
+  // --- Online multiplayer (Phase 10) ------------------------------------
+  // One shared connection for the whole app. Guest identity (the token the
+  // server hands back on first `hello`) lives in OnlinePrefs; the intro
+  // callback reads the *current* profile name/avatar each time we connect.
+  sl.registerLazySingleton<OnlinePrefs>(() => PrefsOnlinePrefs(sl()));
+  sl.registerLazySingleton<OnlineSession>(
+    () => OnlineSession(
+      connector: connectWebSocket,
+      prefs: sl(),
+      intro: () {
+        final profile = sl<ProfileCubit>().state.profile;
+        return (name: profile.name, avatarId: profile.avatarId);
+      },
+    ),
+  );
 }
