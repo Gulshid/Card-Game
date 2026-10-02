@@ -1,0 +1,13 @@
+# Used ONLY by server/Dockerfile (a pure-Dart build has no Flutter SDK).
+# The package name must stay `card_game` so `package:card_game/...` imports
+# in the shared engine files resolve to ./lib.
+name: card_game
+description: Spades Royale game server build.
+publish_to: none
+environment:
+  sdk: ^3.3.0
+dependencies:
+  equatable: ^2.0.5
+  shelf: ^1.4.1
+  shelf_web_socket: ^2.0.0
+  web_socket_channel: ^3.0.0
