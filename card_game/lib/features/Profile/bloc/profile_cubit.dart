@@ -1,9 +1,9 @@
-import 'package:card_game/features/profile/bloc/profile_state.dart';
-import 'package:card_game/features/profile/domain/models/achievements.dart';
-import 'package:card_game/features/profile/domain/models/match_record.dart';
-import 'package:card_game/features/profile/domain/models/player_profile.dart';
-import 'package:card_game/features/profile/domain/models/player_stats.dart';
-import 'package:card_game/features/profile/domain/profile_repository.dart';
+import 'package:card_game/features/Profile/domain/models/achievements.dart';
+import 'package:card_game/features/Profile/domain/models/match_record.dart';
+import 'package:card_game/features/Profile/domain/models/player_profile.dart';
+import 'package:card_game/features/Profile/domain/models/player_stats.dart';
+import 'package:card_game/features/Profile/domain/profile_repository.dart';
+import 'package:card_game/features/Profile/bloc/profile_state.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// App-wide owner of the player's profile, stats and unlocks. A singleton

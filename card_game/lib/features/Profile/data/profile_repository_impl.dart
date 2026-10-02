@@ -1,12 +1,12 @@
 import 'dart:convert';
 
 import 'package:card_game/core/storage/local_store.dart';
-import 'package:card_game/features/profile/domain/achievement_rules.dart';
-import 'package:card_game/features/profile/domain/models/achievements.dart';
-import 'package:card_game/features/profile/domain/models/match_record.dart';
-import 'package:card_game/features/profile/domain/models/player_profile.dart';
-import 'package:card_game/features/profile/domain/models/player_stats.dart';
-import 'package:card_game/features/profile/domain/profile_repository.dart';
+import 'package:card_game/features/Profile/domain/achievement_rules.dart';
+import 'package:card_game/features/Profile/domain/models/achievements.dart';
+import 'package:card_game/features/Profile/domain/models/match_record.dart';
+import 'package:card_game/features/Profile/domain/models/player_profile.dart';
+import 'package:card_game/features/Profile/domain/models/player_stats.dart';
+import 'package:card_game/features/Profile/domain/profile_repository.dart';
 
 class ProfileRepositoryImpl implements ProfileRepository {
   ProfileRepositoryImpl({required LocalStore store}) : _store = store;

@@ -1,4 +1,12 @@
+import 'package:card_game/core/storage/hive_local_store.dart';
+import 'package:card_game/core/storage/local_store.dart';
+import 'package:card_game/features/Profile/domain/profile_repository.dart';
 import 'package:card_game/features/Settings/bloc/settings_cubit.dart';
+import 'package:card_game/features/game/data/saved_match_repository_impl.dart';
+import 'package:card_game/features/game/domain/repositories/saved_match_repository.dart';
+import 'package:card_game/features/home/bloc/resume_match_cubit.dart';
+import 'package:card_game/features/profile/bloc/profile_cubit.dart';
+import 'package:card_game/features/profile/data/profile_repository_impl.dart';
 import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -31,6 +39,17 @@ Future<void> initDependencies() async {
   sl.registerLazySingleton<ThemeCubit>(() => ThemeCubit(prefs: sl()));
   sl.registerLazySingleton<SettingsCubit>(() => SettingsCubit(prefs: sl()));
 
-  // Phase 09 will add: registerLazySingleton<StatsRepository>(...)
+  // --- Persistence (Phase 09) ----------------------------------------
+  // Settings + theme stay on SharedPreferences (simple flags). Structured
+  // data — profile, stats, history, achievements and the in-progress
+  // match — lives in Hive behind the LocalStore interface, so repositories
+  // are tested against InMemoryLocalStore and never import Hive directly.
+  final HiveLocalStore store = await HiveLocalStore.open();
+  sl.registerSingleton<LocalStore>(store);
+  sl.registerLazySingleton<ProfileRepository>(() => ProfileRepositoryImpl(store: sl()));
+  sl.registerLazySingleton<SavedMatchRepository>(() => SavedMatchRepositoryImpl(store: sl()));
+  sl.registerLazySingleton<ProfileCubit>(() => ProfileCubit(repository: sl()));
+  sl.registerLazySingleton<ResumeMatchCubit>(() => ResumeMatchCubit(repository: sl()));
+
   // Phase 10 will add: registerLazySingleton<AuthCubit>(...), matchmaking client
 }

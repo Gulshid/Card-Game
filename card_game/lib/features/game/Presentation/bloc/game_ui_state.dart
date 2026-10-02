@@ -1,3 +1,4 @@
+import 'package:card_game/features/Profile/domain/models/achievements.dart';
 import 'package:card_game/features/game/domain/ai/ai_difficulty.dart';
 import 'package:card_game/features/game/domain/models/game_phase.dart';
 import 'package:card_game/features/game/domain/models/game_state.dart';
@@ -35,6 +36,7 @@ class GameUiState extends Equatable {
     this.isResolvingTrick = false,
     this.hint,
     this.hintNonce = 0,
+    this.newlyUnlocked = const [],
   });
 
   factory GameUiState.initial({required AiDifficulty difficulty, required GameState game}) {
@@ -69,6 +71,10 @@ class GameUiState extends Equatable {
   final String? hint;
   final int hintNonce;
 
+  /// Achievements earned by the match that just ended (Phase 09); shown on
+  /// the match-result sheet. Empty at all other times.
+  final List<Achievement> newlyUnlocked;
+
   bool get isBusy => isBotThinking || isResolvingTrick;
 
   bool get isHumanTurn =>
@@ -95,6 +101,7 @@ class GameUiState extends Equatable {
     bool? isResolvingTrick,
     String? hint,
     int? hintNonce,
+    List<Achievement>? newlyUnlocked,
   }) {
     return GameUiState(
       game: game ?? this.game,
@@ -108,6 +115,7 @@ class GameUiState extends Equatable {
       isResolvingTrick: isResolvingTrick ?? this.isResolvingTrick,
       hint: hint ?? this.hint,
       hintNonce: hintNonce ?? this.hintNonce,
+      newlyUnlocked: newlyUnlocked ?? this.newlyUnlocked,
     );
   }
 
@@ -124,5 +132,6 @@ class GameUiState extends Equatable {
         isResolvingTrick,
         hint,
         hintNonce,
+        newlyUnlocked,
       ];
 }

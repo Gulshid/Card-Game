@@ -1,7 +1,13 @@
 import 'package:card_game/core/audio/audio_service.dart';
 import 'package:card_game/core/di/injection_container.dart';
 import 'package:card_game/core/services/haptics_service.dart';
+import 'package:card_game/features/Profile/domain/models/achievements.dart';
 import 'package:card_game/features/game/domain/ai/ai_difficulty.dart';
+import 'package:card_game/features/game/domain/models/saved_match.dart';
+import 'package:card_game/features/game/domain/repositories/saved_match_repository.dart';
+import 'package:card_game/features/Profile/bloc/profile_cubit.dart';
+import 'package:card_game/features/Profile/bloc/profile_state.dart';
+import 'package:card_game/features/Profile/presentation/widgets/card_back_scope.dart';
 import 'package:card_game/features/game/domain/models/game_phase.dart';
 import 'package:card_game/features/game/domain/models/move.dart';
 import 'package:card_game/features/game/domain/models/seat.dart';
@@ -33,26 +39,45 @@ import '../widgets/turn_score_hud.dart';
 /// reflow its fan/arc geometry on unusual aspect ratios, not just scale
 /// a fixed design, so this screen uses `LayoutBuilder` + `AspectRatio`
 /// directly instead.
+///
+/// Phase 09: pass [resume] to continue a suspended match. The cubit saves
+/// after every move, records the result to the profile when the match
+/// ends, and the table draws the card back the player picked.
 class GameTablePage extends StatelessWidget {
-  const GameTablePage({required this.difficulty, super.key});
+  const GameTablePage({required this.difficulty, this.resume, super.key});
 
   final AiDifficulty difficulty;
+  final SavedMatch? resume;
 
   @override
   Widget build(BuildContext context) {
+    final ProfileCubit profile = context.read<ProfileCubit>();
     return BlocProvider(
       create: (_) => GameCubit(
         haptics: sl<HapticsService>(),
         audio: sl<AudioService>(),
         difficulty: difficulty,
+        savedMatches: sl<SavedMatchRepository>(),
+        resume: resume,
+        onMatchFinished: profile.recordMatch,
       )..start(),
-      child: const _GameTableView(),
+      child: BlocSelector<ProfileCubit, ProfileState, CardBackStyle>(
+        selector: (state) => state.profile.cardBack,
+        builder: (context, cardBack) => CardBackScope(
+          style: cardBack,
+          child: _GameTableView(resumed: resume != null),
+        ),
+      ),
     );
   }
 }
 
 class _GameTableView extends StatefulWidget {
-  const _GameTableView();
+  const _GameTableView({required this.resumed});
+
+  /// A resumed match opens mid-round, so the deal flourish is skipped for
+  /// the round it resumes into (later rounds deal normally).
+  final bool resumed;
 
   @override
   State<_GameTableView> createState() => _GameTableViewState();
@@ -61,6 +86,14 @@ class _GameTableView extends StatefulWidget {
 class _GameTableViewState extends State<_GameTableView> {
   int? _lastDealtRound;
   bool _showDealAnimation = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.resumed) {
+      _lastDealtRound = context.read<GameCubit>().state.game.roundNumber;
+    }
+  }
 
   /// Shows the deal flourish once per round — including the very first
   /// one — by comparing the round number on every rebuild rather than

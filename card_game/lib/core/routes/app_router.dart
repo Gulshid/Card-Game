@@ -1,7 +1,9 @@
 import 'package:card_game/features/Settings/presentation/pages/settings_page.dart';
 import 'package:card_game/features/Splash/presentation/pages/splash_page.dart';
 import 'package:card_game/features/game/domain/ai/ai_difficulty.dart';
+import 'package:card_game/features/game/domain/models/saved_match.dart';
 import 'package:card_game/features/game/Presentation/pages/game_table_page.dart';
+import 'package:card_game/features/Profile/presentation/pages/profile_page.dart';
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
@@ -16,12 +18,25 @@ abstract class AppRoute {
   static const String settings = 'settings';
   static const String uiKit = 'ui-kit';
   static const String table = 'table'; // Phase 05
+  static const String profile = 'profile'; // Phase 09
 
   // Added in later phases:
   // static const String matchResult = 'result';  // folded into the
   //   table route itself (see GameTablePage's MatchResultSheet) rather
   //   than a separate route — there's nothing to deep-link to.
-  // static const String profile = 'profile';     // Phase 09
+}
+
+/// `extra` for the table route. Start a fresh match with just a
+/// [difficulty], or put a suspended match back on the table with
+/// [resume] (its own difficulty wins over [difficulty]).
+///
+/// The route also still accepts a bare `AiDifficulty` as `extra`, so
+/// any caller written before Phase 09 keeps working.
+class TableRouteArgs {
+  const TableRouteArgs({this.difficulty = AiDifficulty.medium, this.resume});
+
+  final AiDifficulty difficulty;
+  final SavedMatch? resume;
 }
 
 abstract class AppRouter {
@@ -52,10 +67,26 @@ abstract class AppRouter {
         GoRoute(
           path: '/table',
           name: AppRoute.table,
-          // `extra` carries the AiDifficulty chosen on Home's
-          // DifficultySelectSheet; default to Medium if the route is
-          // ever reached without it (e.g. a future deep link).
-          builder: (context, state) => GameTablePage(difficulty: (state.extra as AiDifficulty?) ?? AiDifficulty.medium),
+          // `extra` is a TableRouteArgs (new match or resume), or a bare
+          // AiDifficulty from the Phase 05 call site; default to Medium
+          // if the route is ever reached without it (e.g. a deep link).
+          builder: (context, state) {
+            final Object? extra = state.extra;
+            final TableRouteArgs args = switch (extra) {
+              final TableRouteArgs a => a,
+              final AiDifficulty d => TableRouteArgs(difficulty: d),
+              _ => const TableRouteArgs(),
+            };
+            return GameTablePage(
+              difficulty: args.resume?.difficulty ?? args.difficulty,
+              resume: args.resume,
+            );
+          },
+        ),
+        GoRoute(
+          path: '/profile',
+          name: AppRoute.profile,
+          builder: (context, state) => const ProfilePage(),
         ),
       ],
     );

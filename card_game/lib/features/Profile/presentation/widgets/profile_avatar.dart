@@ -1,4 +1,4 @@
-import 'package:card_game/features/profile/domain/models/player_profile.dart';
+import 'package:card_game/features/Profile/domain/models/player_profile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 

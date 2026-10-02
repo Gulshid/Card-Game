@@ -1,5 +1,5 @@
 import 'package:card_game/features/home/bloc/resume_match_cubit.dart';
-import 'package:card_game/features/profile/bloc/profile_cubit.dart';
+import 'package:card_game/features/Profile/bloc/profile_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';

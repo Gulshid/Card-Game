@@ -1,7 +1,8 @@
-import 'package:card_game/features/profile/domain/models/achievements.dart';
-import 'package:card_game/features/profile/domain/models/match_record.dart';
-import 'package:card_game/features/profile/domain/models/player_profile.dart';
-import 'package:card_game/features/profile/domain/models/player_stats.dart';
+
+import 'package:card_game/features/Profile/domain/models/achievements.dart';
+import 'package:card_game/features/Profile/domain/models/match_record.dart';
+import 'package:card_game/features/Profile/domain/models/player_profile.dart';
+import 'package:card_game/features/Profile/domain/models/player_stats.dart';
 import 'package:equatable/equatable.dart';
 
 class ProfileState extends Equatable {

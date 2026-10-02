@@ -1,4 +1,4 @@
-import 'package:card_game/features/profile/domain/models/achievements.dart';
+import 'package:card_game/features/Profile/domain/models/achievements.dart';
 import 'package:flutter/material.dart';
 
 /// Visual identity for each card back. Kept out of the domain enum so the

@@ -4,16 +4,17 @@ import 'package:card_game/Shared/widgets/stat_tile.dart';
 import 'package:card_game/core/constant/app_dimensions.dart';
 import 'package:card_game/core/theme/app_colors.dart';
 import 'package:card_game/core/theme/app_text_styles.dart';
+import 'package:card_game/features/Profile/bloc/profile_cubit.dart';
+import 'package:card_game/features/Profile/bloc/profile_state.dart';
+import 'package:card_game/features/Profile/domain/models/achievements.dart';
+import 'package:card_game/features/Profile/domain/models/match_record.dart';
+import 'package:card_game/features/Profile/domain/models/player_profile.dart';
+import 'package:card_game/features/Profile/presentation/cosmetic_theme.dart';
+import 'package:card_game/features/Profile/presentation/widgets/card_back_scope.dart';
+import 'package:card_game/features/Profile/presentation/widgets/profile_avatar.dart';
 import 'package:card_game/features/game/Presentation/widgets/playing_card_view.dart';
-import 'package:card_game/features/profile/bloc/profile_cubit.dart';
-import 'package:card_game/features/profile/bloc/profile_state.dart';
-import 'package:card_game/features/profile/domain/models/achievements.dart';
-import 'package:card_game/features/profile/domain/models/match_record.dart';
-import 'package:card_game/features/profile/domain/models/player_profile.dart';
-import 'package:card_game/features/profile/presentation/cosmetic_theme.dart';
-import 'package:card_game/features/profile/presentation/widgets/card_back_scope.dart';
-import 'package:card_game/features/profile/presentation/widgets/profile_avatar.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// Avatar + name, lifetime stats, achievements, card-back picker and

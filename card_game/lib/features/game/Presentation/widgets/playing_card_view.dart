@@ -1,4 +1,7 @@
+import 'package:card_game/features/Profile/domain/models/achievements.dart';
 import 'package:card_game/features/game/domain/models/playing_card.dart';
+import 'package:card_game/features/profile/presentation/cosmetic_theme.dart';
+import 'package:card_game/features/profile/presentation/widgets/card_back_scope.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -31,6 +34,9 @@ class PlayingCardView extends StatelessWidget {
   Widget build(BuildContext context) {
     final double w = width.w;
     final double h = w * _aspectRatio;
+    // The back the player picked on the Profile screen (Phase 09); the
+    // classic blue when there is no CardBackScope above (tests, UI kit).
+    final CardBackStyle back = CardBackScope.of(context);
 
     return AnimatedOpacity(
       duration: const Duration(milliseconds: 150),
@@ -42,7 +48,7 @@ class PlayingCardView extends StatelessWidget {
         height: h,
         transform: selected ? (Matrix4.identity()..translate(0.0, -10.0.h)) : Matrix4.identity(),
         decoration: BoxDecoration(
-          color: faceDown ? const Color(0xFF2451B5) : Colors.white,
+          color: faceDown ? back.base : Colors.white,
           borderRadius: BorderRadius.circular(6.r),
           border: Border.all(
             color: selected ? const Color(0xFFC79A3D) : Colors.black.withValues(alpha: 0.15),
@@ -56,14 +62,14 @@ class PlayingCardView extends StatelessWidget {
             ),
           ],
         ),
-        child: faceDown ? _buildBack() : _buildFace(w),
+        child: faceDown ? _buildBack(back) : _buildFace(w),
       ),
     );
   }
 
-  Widget _buildBack() {
+  Widget _buildBack(CardBackStyle back) {
     return Center(
-      child: Icon(Icons.style_outlined, color: Colors.white.withValues(alpha: 0.5), size: width.w * 0.5),
+      child: Icon(back.icon, color: back.accent.withValues(alpha: 0.5), size: width.w * 0.5),
     );
   }
 

@@ -1,4 +1,4 @@
-import 'package:card_game/features/profile/domain/models/achievements.dart';
+import 'package:card_game/features/Profile/domain/models/achievements.dart';
 import 'package:flutter/widgets.dart';
 
 /// Tells every `PlayingCardView` below it which card back to draw.

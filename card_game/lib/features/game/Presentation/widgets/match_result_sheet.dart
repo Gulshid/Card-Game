@@ -5,6 +5,7 @@ import 'package:card_game/core/theme/app_text_styles.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../../../Profile/domain/models/achievements.dart';
 import 'confetti_burst.dart';
 import '../bloc/game_ui_state.dart';
 
@@ -82,6 +83,26 @@ class _MatchResultSheetState extends State<MatchResultSheet> with SingleTickerPr
                       '${widget.uiState.game.teamScores[0] ?? 0} – ${widget.uiState.game.teamScores[1] ?? 0}',
                       style: AppTextStyles.body(Colors.white70),
                     ),
+                    if (widget.uiState.newlyUnlocked.isNotEmpty) ...[
+                      SizedBox(height: AppSpacing.md),
+                      for (final Achievement a in widget.uiState.newlyUnlocked)
+                        Padding(
+                          padding: EdgeInsets.only(top: AppSpacing.xs),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.lock_open_rounded, color: AppColors.gold, size: 16.sp),
+                              SizedBox(width: AppSpacing.xs),
+                              Flexible(
+                                child: Text(
+                                  'Unlocked: ${a.title} — ${a.reward.label} card back',
+                                  style: AppTextStyles.caption(AppColors.goldLight),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
                     SizedBox(height: AppSpacing.lg),
                     PrimaryButton(label: 'Play again', onPressed: widget.onPlayAgain),
                     SizedBox(height: AppSpacing.sm),
