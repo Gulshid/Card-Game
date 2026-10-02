@@ -6,6 +6,8 @@ import 'package:card_game/core/theme/app_theme.dart';
 import 'package:card_game/core/theme/theme_cubit.dart';
 import 'package:card_game/features/Settings/bloc/settings_cubit.dart';
 import 'package:card_game/features/Settings/bloc/settings_state.dart';
+import 'package:card_game/features/home/bloc/resume_match_cubit.dart';
+import 'package:card_game/features/profile/bloc/profile_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -33,7 +35,8 @@ class _SpadesRoyaleAppState extends State<SpadesRoyaleApp> {
       providers: [
         BlocProvider(create: (_) => sl<ThemeCubit>()),
         BlocProvider(create: (_) => sl<SettingsCubit>()),
-
+        BlocProvider(create: (_) => sl<ProfileCubit>()),
+        BlocProvider(create: (_) => sl<ResumeMatchCubit>()),
       ],
       child: BlocListener<SettingsCubit, SettingsState>(
         // Any mute/volume change from the Settings screen is forwarded
