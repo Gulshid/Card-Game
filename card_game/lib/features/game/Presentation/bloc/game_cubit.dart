@@ -17,9 +17,8 @@ import 'package:card_game/features/game/domain/models/saved_match.dart';
 import 'package:card_game/features/game/domain/repositories/saved_match_repository.dart';
 import 'package:card_game/features/game/domain/models/seat.dart';
 import 'package:card_game/features/game/domain/models/suit.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-
 import 'game_ui_state.dart';
+import 'table_cubit.dart';
 
 /// Runs one single-player match: the human plays South, three bots play
 /// the other seats. The rules engine (Phase 04) stays the single source
@@ -38,7 +37,7 @@ import 'game_ui_state.dart';
 ///  * `resume` — puts a previously saved match back on the table;
 ///  * [onMatchFinished] — receives the finished match's record (wired to
 ///    `ProfileCubit.recordMatch`) and returns any achievements it unlocked.
-class GameCubit extends Cubit<GameUiState> {
+class GameCubit extends TableCubit {
   GameCubit({
     required HapticsService haptics,
     required AudioService audio,
@@ -113,6 +112,7 @@ class GameCubit extends Cubit<GameUiState> {
   /// Lets the bots act until it is the human's turn. Call once after the
   /// cubit is created — this is also where table music starts, since
   /// it's the single guaranteed entry point every match goes through.
+  @override
   Future<void> start() async {
     unawaited(_audio.playMusic(MusicTrack.tableAmbience));
     unawaited(_audio.play(SfxCue.cardDeal));
@@ -120,6 +120,7 @@ class GameCubit extends Cubit<GameUiState> {
   }
 
   /// Human bids [tricks] (0 = Nil).
+  @override
   Future<void> submitBid(int tricks) async {
     final GameUiState s = state;
     if (!s.canHumanAct || s.game.phase != GamePhase.bidding) return;
@@ -134,6 +135,7 @@ class GameCubit extends Cubit<GameUiState> {
   }
 
   /// Human plays [card]. Illegal plays are rejected with an explanatory hint.
+  @override
   Future<void> playCard(PlayingCard card) async {
     final GameUiState s = state;
     if (!s.canHumanAct || s.game.phase != GamePhase.playing) return;
@@ -161,6 +163,7 @@ class GameCubit extends Cubit<GameUiState> {
   }
 
   /// Deals the next round once the summary has been dismissed.
+  @override
   Future<void> nextRound() async {
     final GameUiState s = state;
     if (s.game.phase != GamePhase.roundEnd || s.isBusy) return;
@@ -181,6 +184,7 @@ class GameCubit extends Cubit<GameUiState> {
   }
 
   /// Starts a brand-new match at the same difficulty.
+  @override
   Future<void> restart() async {
     if (state.isBusy) return;
     _nilsMade = 0;

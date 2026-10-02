@@ -19,6 +19,7 @@ import 'package:go_router/go_router.dart';
 
 import '../bloc/game_cubit.dart';
 import '../bloc/game_ui_state.dart';
+import '../bloc/table_cubit.dart';
 import '../widgets/bid_overlay.dart';
 import '../widgets/deal_animation_overlay.dart';
 import '../widgets/match_result_sheet.dart';
@@ -43,6 +44,10 @@ import '../widgets/turn_score_hud.dart';
 /// Phase 09: pass [resume] to continue a suspended match. The cubit saves
 /// after every move, records the result to the profile when the match
 /// ends, and the table draws the card back the player picked.
+///
+/// Phase 10: the table itself ([GameTableView]) now depends only on the
+/// [TableCubit] contract, so the same screen also renders online matches
+/// (see `OnlineGameTablePage`). This page remains the offline-vs-bots entry.
 class GameTablePage extends StatelessWidget {
   const GameTablePage({required this.difficulty, this.resume, super.key});
 
@@ -52,7 +57,7 @@ class GameTablePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ProfileCubit profile = context.read<ProfileCubit>();
-    return BlocProvider(
+    return BlocProvider<TableCubit>(
       create: (_) => GameCubit(
         haptics: sl<HapticsService>(),
         audio: sl<AudioService>(),
@@ -65,25 +70,44 @@ class GameTablePage extends StatelessWidget {
         selector: (state) => state.profile.cardBack,
         builder: (context, cardBack) => CardBackScope(
           style: cardBack,
-          child: _GameTableView(resumed: resume != null),
+          child: GameTableView(resumed: resume != null),
         ),
       ),
     );
   }
 }
 
-class _GameTableView extends StatefulWidget {
-  const _GameTableView({required this.resumed});
+/// The felt table, driven by whichever [TableCubit] is in scope.
+class GameTableView extends StatefulWidget {
+  const GameTableView({
+    required this.resumed,
+    super.key,
+    this.onPlayAgain,
+    this.onHome,
+    this.playAgainLabel = 'Play again',
+    this.homeLabel = 'Back to home',
+    this.overlay,
+  });
 
   /// A resumed match opens mid-round, so the deal flourish is skipped for
   /// the round it resumes into (later rounds deal normally).
   final bool resumed;
 
+  /// Overrides for the match-result buttons (online: leave the table).
+  /// When null: "Play again" restarts the cubit, "Back to home" pops.
+  final VoidCallback? onPlayAgain;
+  final VoidCallback? onHome;
+  final String playAgainLabel;
+  final String homeLabel;
+
+  /// Extra widget stacked above the table (online status banner, emotes).
+  final Widget? overlay;
+
   @override
-  State<_GameTableView> createState() => _GameTableViewState();
+  State<GameTableView> createState() => _GameTableViewState();
 }
 
-class _GameTableViewState extends State<_GameTableView> {
+class _GameTableViewState extends State<GameTableView> {
   int? _lastDealtRound;
   bool _showDealAnimation = false;
 
@@ -91,7 +115,7 @@ class _GameTableViewState extends State<_GameTableView> {
   void initState() {
     super.initState();
     if (widget.resumed) {
-      _lastDealtRound = context.read<GameCubit>().state.game.roundNumber;
+      _lastDealtRound = context.read<TableCubit>().state.game.roundNumber;
     }
   }
 
@@ -115,7 +139,7 @@ class _GameTableViewState extends State<_GameTableView> {
     return Scaffold(
       backgroundColor: const Color(0xFF0F3D2C), // felt
       body: SafeArea(
-        child: BlocConsumer<GameCubit, GameUiState>(
+        child: BlocConsumer<TableCubit, GameUiState>(
           listenWhen: (prev, curr) => curr.hint != null && curr.hintNonce != prev.hintNonce,
           listener: (context, state) {
             ScaffoldMessenger.of(context)
@@ -123,7 +147,7 @@ class _GameTableViewState extends State<_GameTableView> {
               ..showSnackBar(SnackBar(content: Text(state.hint!), duration: const Duration(seconds: 2)));
           },
           builder: (context, state) {
-            final cubit = context.read<GameCubit>();
+            final cubit = context.read<TableCubit>();
             _maybeTriggerDealAnimation(state.game.roundNumber);
 
             return Stack(
@@ -155,8 +179,10 @@ class _GameTableViewState extends State<_GameTableView> {
                 if (state.showMatchResult)
                   MatchResultSheet(
                     uiState: state,
-                    onPlayAgain: cubit.restart,
-                    onHome: () => context.pop(),
+                    onPlayAgain: widget.onPlayAgain ?? cubit.restart,
+                    onHome: widget.onHome ?? () => context.pop(),
+                    playAgainLabel: widget.playAgainLabel,
+                    homeLabel: widget.homeLabel,
                   ),
                 if (_showDealAnimation)
                   DealAnimationOverlay(
@@ -166,6 +192,7 @@ class _GameTableViewState extends State<_GameTableView> {
                       if (mounted) setState(() => _showDealAnimation = false);
                     },
                   ),
+                if (widget.overlay != null) widget.overlay!,
               ],
             );
           },

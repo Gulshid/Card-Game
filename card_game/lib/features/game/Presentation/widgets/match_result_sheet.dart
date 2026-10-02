@@ -20,11 +20,17 @@ class MatchResultSheet extends StatefulWidget {
     required this.onPlayAgain,
     required this.onHome,
     super.key,
+    this.playAgainLabel = 'Play again',
+    this.homeLabel = 'Back to home',
   });
 
   final GameUiState uiState;
   final VoidCallback onPlayAgain;
   final VoidCallback onHome;
+
+  /// Phase 10: online matches relabel these ("Back to lobby").
+  final String playAgainLabel;
+  final String homeLabel;
 
   @override
   State<MatchResultSheet> createState() => _MatchResultSheetState();
@@ -104,11 +110,11 @@ class _MatchResultSheetState extends State<MatchResultSheet> with SingleTickerPr
                         ),
                     ],
                     SizedBox(height: AppSpacing.lg),
-                    PrimaryButton(label: 'Play again', onPressed: widget.onPlayAgain),
+                    PrimaryButton(label: widget.playAgainLabel, onPressed: widget.onPlayAgain),
                     SizedBox(height: AppSpacing.sm),
                     TextButton(
                       onPressed: widget.onHome,
-                      child: Text('Back to home', style: AppTextStyles.body(Colors.white70)),
+                      child: Text(widget.homeLabel, style: AppTextStyles.body(Colors.white70)),
                     ),
                   ],
                 ),

@@ -92,6 +92,7 @@ class GameUiState extends Equatable {
   GameUiState copyWith({
     GameState? game,
     AiDifficulty? difficulty,
+    Map<Seat, Player>? players,
     Map<int, int>? roundStartScores,
     Map<int, int>? roundStartBags,
     List<TrickCard>? displayTrick,
@@ -106,7 +107,7 @@ class GameUiState extends Equatable {
     return GameUiState(
       game: game ?? this.game,
       difficulty: difficulty ?? this.difficulty,
-      players: players,
+      players: players ?? this.players,
       roundStartScores: roundStartScores ?? this.roundStartScores,
       roundStartBags: roundStartBags ?? this.roundStartBags,
       displayTrick: displayTrick ?? this.displayTrick,
