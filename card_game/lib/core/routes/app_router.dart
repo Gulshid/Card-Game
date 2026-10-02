@@ -4,6 +4,8 @@ import 'package:card_game/features/game/domain/ai/ai_difficulty.dart';
 import 'package:card_game/features/game/domain/models/saved_match.dart';
 import 'package:card_game/features/game/Presentation/pages/game_table_page.dart';
 import 'package:card_game/features/Profile/presentation/pages/profile_page.dart';
+import 'package:card_game/features/multiplayer/presentation/pages/online_game_table_page.dart';
+import 'package:card_game/features/multiplayer/presentation/pages/online_lobby_page.dart';
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
@@ -19,6 +21,8 @@ abstract class AppRoute {
   static const String uiKit = 'ui-kit';
   static const String table = 'table'; // Phase 05
   static const String profile = 'profile'; // Phase 09
+  static const String onlineLobby = 'online-lobby'; // Phase 10
+  static const String onlineTable = 'online-table'; // Phase 10
 
   // Added in later phases:
   // static const String matchResult = 'result';  // folded into the
@@ -87,6 +91,18 @@ abstract class AppRouter {
           path: '/profile',
           name: AppRoute.profile,
           builder: (context, state) => const ProfilePage(),
+        ),
+        GoRoute(
+          path: '/online',
+          name: AppRoute.onlineLobby,
+          builder: (context, state) => const OnlineLobbyPage(),
+          routes: [
+            GoRoute(
+              path: 'table',
+              name: AppRoute.onlineTable,
+              builder: (context, state) => const OnlineGameTablePage(),
+            ),
+          ],
         ),
       ],
     );
