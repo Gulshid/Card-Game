@@ -5,11 +5,10 @@ import 'package:card_game/features/Settings/bloc/settings_cubit.dart';
 import 'package:card_game/features/game/data/saved_match_repository_impl.dart';
 import 'package:card_game/features/game/domain/repositories/saved_match_repository.dart';
 import 'package:card_game/features/home/bloc/resume_match_cubit.dart';
-import 'package:card_game/features/profile/bloc/profile_cubit.dart';
 import 'package:card_game/features/profile/data/profile_repository_impl.dart';
 import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
+import 'package:card_game/features/Profile/bloc/profile_cubit.dart';   // capital
 import '../audio/audio_service.dart';
 import '../services/haptics_service.dart';
 import '../theme/theme_cubit.dart';

@@ -28,11 +28,15 @@ class _SplashPageState extends State<SplashPage> {
   }
 
   Future<void> _bootstrap() async {
-    final ProfileCubit profile = context.read<ProfileCubit>();
-    final ResumeMatchCubit resume = context.read<ResumeMatchCubit>();
-    await Future.wait([profile.ensureLoaded(), resume.refresh()]);
-    if (mounted) context.goNamed(AppRoute.home);
-  }
+  final ProfileCubit profile = context.read<ProfileCubit>();
+  final ResumeMatchCubit resume = context.read<ResumeMatchCubit>();
+  await Future.wait([
+    profile.ensureLoaded(),
+    resume.refresh(),
+    Future<void>.delayed(const Duration(seconds: 3)), // minimum splash time
+  ]);
+  if (mounted) context.goNamed(AppRoute.home);
+}
 
   @override
   Widget build(BuildContext context) {
