@@ -1,14 +1,17 @@
+import 'package:card_game/core/theme/app_colors.dart';
 import 'package:card_game/core/theme/app_text_styles.dart';
+import 'package:card_game/features/game/domain/models/game_phase.dart';
 import 'package:card_game/features/game/domain/models/game_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../bloc/game_ui_state.dart';
+import 'pulse_glow.dart';
 
-/// Top bar over the table: round number, both teams' running score and
-/// bag count, and whose turn it is. Score changes count up rather than
-/// jump, so a round's outcome reads as a change happening, not just a
-/// new number appearing.
+/// Top bar over the table: both teams' running score and bag count,
+/// the round number, and a pill saying whose turn it is. Score changes
+/// count up rather than jump, so a round's outcome reads as a change
+/// happening, not just a new number appearing.
 class TurnScoreHud extends StatelessWidget {
   const TurnScoreHud({required this.uiState, super.key});
 
@@ -17,29 +20,88 @@ class TurnScoreHud extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final GameState game = uiState.game;
-    final String turnLabel = uiState.players[game.turn]?.name ?? game.turn.name;
+    final bool myTurn = game.turn == kHumanSeat &&
+        (game.phase == GamePhase.bidding || game.phase == GamePhase.playing);
+
+    final String name = uiState.players[game.turn]?.name ?? game.turn.name;
+    final String turnLabel;
+    if (myTurn) {
+      turnLabel = game.phase == GamePhase.bidding ? 'Your bid' : 'Your turn';
+    } else if (game.phase == GamePhase.bidding || game.phase == GamePhase.playing) {
+      turnLabel = uiState.isBotThinking ? '$name is thinking…' : "$name's turn";
+    } else {
+      turnLabel = 'Round over';
+    }
 
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          _TeamScore(label: 'Us', score: game.teamScores[0] ?? 0, bags: game.teamBags[0] ?? 0),
-          const Spacer(),
-          Column(
-            children: [
-              Text('Round ${game.roundNumber}', style: AppTextStyles.caption(Colors.white70)),
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 200),
-                child: Text(
-                  uiState.isBotThinking ? '$turnLabel is thinking…' : "$turnLabel's turn",
-                  key: ValueKey('$turnLabel-${uiState.isBotThinking}'),
-                  style: AppTextStyles.bodyStrong(Colors.white),
-                ),
-              ),
-            ],
+          _TeamScore(
+            label: 'US',
+            accent: AppColors.goldLight,
+            score: game.teamScores[0] ?? 0,
+            bags: game.teamBags[0] ?? 0,
           ),
-          const Spacer(),
-          _TeamScore(label: 'Them', score: game.teamScores[1] ?? 0, bags: game.teamBags[1] ?? 0, alignEnd: true),
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('ROUND ${game.roundNumber}', style: AppTextStyles.overline(Colors.white54)),
+                SizedBox(height: 4.h),
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 200),
+                  child: Container(
+                    key: ValueKey('$turnLabel-$myTurn'),
+                    padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 5.h),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.30),
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(
+                        color: myTurn ? AppColors.gold.withValues(alpha: 0.85) : Colors.white.withValues(alpha: 0.12),
+                      ),
+                      boxShadow: myTurn ? AppShadows.goldGlow(0.25) : null,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        PulseGlow(
+                          active: myTurn,
+                          child: Container(
+                            width: 7,
+                            height: 7,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: myTurn ? AppColors.gold : Colors.white38,
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 6.w),
+                        Flexible(
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              turnLabel,
+                              maxLines: 1,
+                              style: AppTextStyles.bodyStrong(myTurn ? AppColors.goldLight : Colors.white),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          _TeamScore(
+            label: 'THEM',
+            accent: AppColors.blueSoft,
+            score: game.teamScores[1] ?? 0,
+            bags: game.teamBags[1] ?? 0,
+            alignEnd: true,
+          ),
         ],
       ),
     );
@@ -47,26 +109,43 @@ class TurnScoreHud extends StatelessWidget {
 }
 
 class _TeamScore extends StatelessWidget {
-  const _TeamScore({required this.label, required this.score, required this.bags, this.alignEnd = false});
+  const _TeamScore({
+    required this.label,
+    required this.accent,
+    required this.score,
+    required this.bags,
+    this.alignEnd = false,
+  });
 
   final String label;
+  final Color accent;
   final int score;
   final int bags;
   final bool alignEnd;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-      children: [
-        Text(label, style: AppTextStyles.caption(Colors.white60)),
-        TweenAnimationBuilder<int>(
-          tween: IntTween(begin: score, end: score),
-          duration: const Duration(milliseconds: 500),
-          builder: (context, value, _) => Text('$value', style: AppTextStyles.h2(const Color(0xFFC79A3D))),
-        ),
-        Text('$bags bags', style: AppTextStyles.caption(Colors.white38)),
-      ],
+    return Container(
+      constraints: BoxConstraints(minWidth: 74.w),
+      padding: EdgeInsets.symmetric(horizontal: 11.w, vertical: 6.h),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.26),
+        borderRadius: BorderRadius.circular(14.r),
+        border: Border.all(color: accent.withValues(alpha: 0.35)),
+      ),
+      child: Column(
+        crossAxisAlignment: alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(label, style: AppTextStyles.overline(accent)),
+          TweenAnimationBuilder<int>(
+            tween: IntTween(begin: score, end: score),
+            duration: const Duration(milliseconds: 500),
+            builder: (context, value, _) => Text('$value', style: AppTextStyles.numeric(Colors.white, size: 22)),
+          ),
+          Text('$bags bags', style: AppTextStyles.caption(Colors.white54).copyWith(fontSize: 10.sp)),
+        ],
+      ),
     );
   }
 }
