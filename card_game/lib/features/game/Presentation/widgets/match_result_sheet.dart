@@ -1,3 +1,5 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:card_game/Shared/widgets/primary_button.dart';
 import 'package:card_game/core/constant/app_dimensions.dart';
 import 'package:card_game/core/theme/app_colors.dart';
@@ -28,7 +30,7 @@ class MatchResultSheet extends StatefulWidget {
   final VoidCallback onPlayAgain;
   final VoidCallback onHome;
 
-  /// Phase 10: online matches relabel these ("Back to lobby").
+  /// Online matches relabel these ("Back to lobby").
   final String playAgainLabel;
   final String homeLabel;
 
@@ -39,7 +41,7 @@ class MatchResultSheet extends StatefulWidget {
 class _MatchResultSheetState extends State<MatchResultSheet> with SingleTickerProviderStateMixin {
   late final AnimationController _entrance = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 320),
+    duration: const Duration(milliseconds: 340),
   )..forward();
   late final Animation<double> _scale = CurvedAnimation(parent: _entrance, curve: Curves.easeOutBack);
   late final Animation<double> _fade = CurvedAnimation(parent: _entrance, curve: Curves.easeOut);
@@ -54,75 +56,141 @@ class _MatchResultSheetState extends State<MatchResultSheet> with SingleTickerPr
   Widget build(BuildContext context) {
     final int? winner = widget.uiState.game.winningTeam;
     final bool humanWon = winner == 0;
+    final int us = widget.uiState.game.teamScores[0] ?? 0;
+    final int them = widget.uiState.game.teamScores[1] ?? 0;
+    final Color accent = humanWon ? AppColors.gold : AppColors.blueSoft;
 
-    return Container(
-      color: Colors.black.withValues(alpha: 0.7),
-      alignment: Alignment.center,
-      child: Stack(
+    return BackdropFilter(
+      filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+      child: Container(
+        color: Colors.black.withValues(alpha: 0.7),
         alignment: Alignment.center,
-        children: [
-          if (humanWon) const Positioned.fill(child: ConfettiBurst()),
-          FadeTransition(
-            opacity: _fade,
-            child: ScaleTransition(
-              scale: _scale,
-              child: Container(
-                margin: EdgeInsets.symmetric(horizontal: 24.w),
-                padding: EdgeInsets.all(AppSpacing.lg),
-                decoration: BoxDecoration(
-                  color: AppColors.navy,
-                  borderRadius: BorderRadius.circular(AppRadius.lg),
-                  border: Border.all(color: AppColors.gold.withValues(alpha: 0.4)),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      humanWon ? Icons.emoji_events : Icons.sentiment_dissatisfied_outlined,
-                      color: AppColors.gold,
-                      size: 48.sp,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            if (humanWon) const Positioned.fill(child: ConfettiBurst()),
+            FadeTransition(
+              opacity: _fade,
+              child: ScaleTransition(
+                scale: _scale,
+                child: Container(
+                  margin: EdgeInsets.symmetric(horizontal: 20.w),
+                  padding: EdgeInsets.all(AppSpacing.lg),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Color(0xFF1C2D55), Color(0xFF0D172E)],
                     ),
-                    SizedBox(height: AppSpacing.sm),
-                    Text(humanWon ? 'You won!' : 'They won this one', style: AppTextStyles.h1(Colors.white)),
-                    SizedBox(height: AppSpacing.xs),
-                    Text(
-                      '${widget.uiState.game.teamScores[0] ?? 0} – ${widget.uiState.game.teamScores[1] ?? 0}',
-                      style: AppTextStyles.body(Colors.white70),
-                    ),
-                    if (widget.uiState.newlyUnlocked.isNotEmpty) ...[
-                      SizedBox(height: AppSpacing.md),
-                      for (final Achievement a in widget.uiState.newlyUnlocked)
-                        Padding(
-                          padding: EdgeInsets.only(top: AppSpacing.xs),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.lock_open_rounded, color: AppColors.gold, size: 16.sp),
-                              SizedBox(width: AppSpacing.xs),
-                              Flexible(
-                                child: Text(
-                                  'Unlocked: ${a.title} — ${a.reward.label} card back',
-                                  style: AppTextStyles.caption(AppColors.goldLight),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                    borderRadius: BorderRadius.circular(AppRadius.xl),
+                    border: Border.all(color: accent.withValues(alpha: 0.5), width: 1.3),
+                    boxShadow: [
+                      BoxShadow(color: accent.withValues(alpha: 0.25), blurRadius: 40, spreadRadius: 2),
                     ],
-                    SizedBox(height: AppSpacing.lg),
-                    PrimaryButton(label: widget.playAgainLabel, onPressed: widget.onPlayAgain),
-                    SizedBox(height: AppSpacing.sm),
-                    TextButton(
-                      onPressed: widget.onHome,
-                      child: Text(widget.homeLabel, style: AppTextStyles.body(Colors.white70)),
-                    ),
-                  ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 84.w,
+                        height: 84.w,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: humanWon ? AppColors.goldGradient : null,
+                          color: humanWon ? null : Colors.white.withValues(alpha: 0.08),
+                          boxShadow: humanWon ? AppShadows.goldGlow(0.45) : null,
+                        ),
+                        child: Icon(
+                          humanWon ? Icons.emoji_events_rounded : Icons.flag_rounded,
+                          color: humanWon ? AppColors.navyDeep : Colors.white70,
+                          size: 42.sp,
+                        ),
+                      ),
+                      SizedBox(height: AppSpacing.md),
+                      Text(humanWon ? 'VICTORY' : 'DEFEAT', style: AppTextStyles.overline(accent)),
+                      SizedBox(height: 4.h),
+                      Text(
+                        humanWon ? 'You won!' : 'They won this one',
+                        style: AppTextStyles.display(Colors.white).copyWith(fontSize: 26.sp),
+                        textAlign: TextAlign.center,
+                      ),
+                      SizedBox(height: AppSpacing.md),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          _ScoreBlock(label: 'US', score: us, accent: AppColors.goldLight, strong: humanWon),
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                            child: Text('–', style: AppTextStyles.h1(Colors.white38)),
+                          ),
+                          _ScoreBlock(label: 'THEM', score: them, accent: AppColors.blueSoft, strong: !humanWon),
+                        ],
+                      ),
+                      if (widget.uiState.newlyUnlocked.isNotEmpty) ...[
+                        SizedBox(height: AppSpacing.md),
+                        for (final Achievement a in widget.uiState.newlyUnlocked)
+                          Container(
+                            margin: EdgeInsets.only(top: AppSpacing.xs + 2),
+                            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+                            decoration: BoxDecoration(
+                              color: AppColors.gold.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(AppRadius.md),
+                              border: Border.all(color: AppColors.gold.withValues(alpha: 0.4)),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.lock_open_rounded, color: AppColors.gold, size: 16.sp),
+                                SizedBox(width: AppSpacing.sm),
+                                Flexible(
+                                  child: Text(
+                                    'Unlocked: ${a.title} — ${a.reward.label} card back',
+                                    style: AppTextStyles.caption(AppColors.goldLight).copyWith(fontWeight: FontWeight.w700),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
+                      SizedBox(height: AppSpacing.lg),
+                      PrimaryButton(label: widget.playAgainLabel, icon: Icons.replay_rounded, onPressed: widget.onPlayAgain),
+                      SizedBox(height: AppSpacing.xs),
+                      TextButton(
+                        onPressed: widget.onHome,
+                        child: Text(widget.homeLabel, style: AppTextStyles.bodyStrong(Colors.white70)),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
+    );
+  }
+}
+
+class _ScoreBlock extends StatelessWidget {
+  const _ScoreBlock({required this.label, required this.score, required this.accent, required this.strong});
+
+  final String label;
+  final int score;
+  final Color accent;
+  final bool strong;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(label, style: AppTextStyles.overline(accent)),
+        SizedBox(height: 4.h),
+        Text(
+          '$score',
+          style: AppTextStyles.numeric(strong ? Colors.white : Colors.white54, size: strong ? 38 : 30),
+        ),
+      ],
     );
   }
 }
