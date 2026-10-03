@@ -1,5 +1,8 @@
+import 'package:card_game/Shared/widgets/app_background.dart';
 import 'package:card_game/Shared/widgets/app_surface.dart';
+import 'package:card_game/Shared/widgets/fade_slide_in.dart';
 import 'package:card_game/Shared/widgets/loading_indicator.dart';
+import 'package:card_game/Shared/widgets/section_header.dart';
 import 'package:card_game/Shared/widgets/stat_tile.dart';
 import 'package:card_game/core/constant/app_dimensions.dart';
 import 'package:card_game/core/theme/app_colors.dart';
@@ -16,6 +19,7 @@ import 'package:card_game/features/game/Presentation/widgets/playing_card_view.d
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// Avatar + name, lifetime stats, achievements, card-back picker and
 /// recent matches — all bound to [ProfileCubit].
@@ -24,40 +28,50 @@ class ProfilePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Profile'),
-        actions: [
-          PopupMenuButton<String>(
-            onSelected: (_) => _confirmReset(context),
-            itemBuilder: (_) => const [PopupMenuItem(value: 'reset', child: Text('Reset progress'))],
+    return AppBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: const Text('Profile'),
+          actions: [
+            PopupMenuButton<String>(
+              onSelected: (_) => _confirmReset(context),
+              itemBuilder: (_) => const [PopupMenuItem(value: 'reset', child: Text('Reset progress'))],
+            ),
+          ],
+        ),
+        body: SafeArea(
+          top: false,
+          child: BlocBuilder<ProfileCubit, ProfileState>(
+            builder: (context, state) {
+              if (!state.isLoaded) return const Center(child: AppLoadingIndicator());
+              return ListView(
+                physics: const BouncingScrollPhysics(),
+                padding: EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, AppSpacing.xl),
+                children: [
+                  FadeSlideIn(child: _Header(profile: state.profile, state: state)),
+                  SizedBox(height: AppSpacing.lg),
+                  FadeSlideIn(delay: const Duration(milliseconds: 80), child: _StatsPanel(state: state)),
+                  SizedBox(height: AppSpacing.lg + 4.h),
+                  SectionHeader(
+                    'Achievements',
+                    trailing: _CountChip(text: '${state.unlocked.length}/${Achievement.values.length}'),
+                  ),
+                  SizedBox(height: AppSpacing.sm + 2),
+                  for (final Achievement a in Achievement.values) _AchievementRow(achievement: a, state: state),
+                  SizedBox(height: AppSpacing.lg),
+                  const SectionHeader('Card backs'),
+                  SizedBox(height: AppSpacing.sm + 2),
+                  _CardBackPicker(state: state),
+                  SizedBox(height: AppSpacing.lg + 4.h),
+                  const SectionHeader('Recent matches'),
+                  SizedBox(height: AppSpacing.sm + 2),
+                  _History(history: state.history),
+                ],
+              );
+            },
           ),
-        ],
-      ),
-      body: BlocBuilder<ProfileCubit, ProfileState>(
-        builder: (context, state) {
-          if (!state.isLoaded) return const Center(child: AppLoadingIndicator());
-          return ListView(
-            padding: EdgeInsets.all(AppSpacing.lg),
-            children: [
-              _Header(profile: state.profile),
-              SizedBox(height: AppSpacing.lg),
-              _StatsGrid(state: state),
-              SizedBox(height: AppSpacing.lg),
-              _SectionTitle('Achievements'),
-              SizedBox(height: AppSpacing.sm),
-              for (final Achievement a in Achievement.values) _AchievementRow(achievement: a, state: state),
-              SizedBox(height: AppSpacing.lg),
-              _SectionTitle('Card backs'),
-              SizedBox(height: AppSpacing.sm),
-              _CardBackPicker(state: state),
-              SizedBox(height: AppSpacing.lg),
-              _SectionTitle('Recent matches'),
-              SizedBox(height: AppSpacing.sm),
-              _History(history: state.history),
-            ],
-          );
-        },
+        ),
       ),
     );
   }
@@ -74,7 +88,11 @@ class ProfilePage extends StatelessWidget {
         ),
         actions: [
           TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Reset')),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.danger),
+            child: const Text('Reset'),
+          ),
         ],
       ),
     );
@@ -82,56 +100,106 @@ class ProfilePage extends StatelessWidget {
   }
 }
 
-class _SectionTitle extends StatelessWidget {
-  const _SectionTitle(this.text);
+class _CountChip extends StatelessWidget {
+  const _CountChip({required this.text});
 
   final String text;
 
   @override
   Widget build(BuildContext context) {
-    return Text(text, style: AppTextStyles.h2(Theme.of(context).colorScheme.onSurface));
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 3.h),
+      decoration: BoxDecoration(
+        color: AppColors.gold.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+      ),
+      child: Text(text, style: AppTextStyles.caption(AppColors.goldText(context)).copyWith(fontWeight: FontWeight.w800)),
+    );
   }
 }
 
 // ---- Header -------------------------------------------------------------
 
 class _Header extends StatelessWidget {
-  const _Header({required this.profile});
+  const _Header({required this.profile, required this.state});
 
   final PlayerProfile profile;
+  final ProfileState state;
 
   @override
   Widget build(BuildContext context) {
-    final Color onSurface = Theme.of(context).colorScheme.onSurface;
-    return Row(
-      children: [
-        GestureDetector(
-          onTap: () => _pickAvatar(context),
-          child: Stack(
-            children: [
-              ProfileAvatar(avatarId: profile.avatarId, radius: 36),
-              const Positioned(
-                right: 0,
-                bottom: 0,
-                child: CircleAvatar(
-                  radius: 10,
-                  backgroundColor: AppColors.gold,
-                  child: Icon(Icons.edit, size: 12, color: AppColors.navy),
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    final Color primary = isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight;
+    final Color muted = isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight;
+
+    return AppSurface(
+      padding: EdgeInsets.all(AppSpacing.lg),
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: () => _pickAvatar(context),
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(3),
+                  decoration: const BoxDecoration(shape: BoxShape.circle, gradient: AppColors.goldGradient),
+                  child: Container(
+                    padding: const EdgeInsets.all(2.5),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: isDark ? AppColors.navyDeep : Colors.white,
+                    ),
+                    child: ProfileAvatar(avatarId: profile.avatarId, radius: 36),
+                  ),
                 ),
-              ),
-            ],
+                Positioned(
+                  right: -2,
+                  bottom: -2,
+                  child: Container(
+                    padding: const EdgeInsets.all(5),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: AppColors.goldGradient,
+                      border: Border.all(color: isDark ? AppColors.navyDeep : Colors.white, width: 2),
+                    ),
+                    child: Icon(Icons.edit_rounded, size: 12.sp, color: AppColors.navyDeep),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-        SizedBox(width: AppSpacing.md),
-        Expanded(
-          child: Text(profile.name, style: AppTextStyles.h1(onSurface), maxLines: 1, overflow: TextOverflow.ellipsis),
-        ),
-        IconButton(
-          tooltip: 'Edit name',
-          icon: const Icon(Icons.edit_outlined),
-          onPressed: () => _editName(context),
-        ),
-      ],
+          SizedBox(width: AppSpacing.md + 2),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(profile.name, style: AppTextStyles.h1(primary), maxLines: 1, overflow: TextOverflow.ellipsis),
+                SizedBox(height: 4.h),
+                Text(
+                  '${state.unlocked.length} of ${Achievement.values.length} achievements',
+                  style: AppTextStyles.caption(muted),
+                ),
+                SizedBox(height: 6.h),
+                GestureDetector(
+                  onTap: () => _editName(context),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.edit_outlined, size: 14.sp, color: AppColors.goldText(context)),
+                      SizedBox(width: 4.w),
+                      Text(
+                        'Edit name',
+                        style: AppTextStyles.caption(AppColors.goldText(context)).copyWith(fontWeight: FontWeight.w700),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -150,27 +218,35 @@ class _Header extends StatelessWidget {
       context: context,
       builder: (ctx) => SafeArea(
         child: Padding(
-          padding: EdgeInsets.all(AppSpacing.lg),
-          child: Wrap(
-            spacing: AppSpacing.md,
-            runSpacing: AppSpacing.md,
+          padding: EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.lg),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              for (int i = 0; i < kAvatars.length; i++)
-                InkWell(
-                  borderRadius: BorderRadius.circular(999),
-                  onTap: () => Navigator.of(ctx).pop(i),
-                  child: Container(
-                    padding: const EdgeInsets.all(3),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: i == profile.avatarId ? AppColors.gold : Colors.transparent,
-                        width: 2,
+              Text('Choose your avatar', style: AppTextStyles.title(Theme.of(ctx).colorScheme.onSurface)),
+              SizedBox(height: AppSpacing.md),
+              Wrap(
+                spacing: AppSpacing.md,
+                runSpacing: AppSpacing.md,
+                children: [
+                  for (int i = 0; i < kAvatars.length; i++)
+                    InkWell(
+                      borderRadius: BorderRadius.circular(999),
+                      onTap: () => Navigator.of(ctx).pop(i),
+                      child: Container(
+                        padding: const EdgeInsets.all(3),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: i == profile.avatarId ? AppColors.gold : Colors.transparent,
+                            width: 2.4,
+                          ),
+                        ),
+                        child: ProfileAvatar(avatarId: i, radius: 26),
                       ),
                     ),
-                    child: ProfileAvatar(avatarId: i, radius: 26),
-                  ),
-                ),
+                ],
+              ),
             ],
           ),
         ),
@@ -219,30 +295,88 @@ class _NameDialogState extends State<_NameDialog> {
 
 // ---- Stats ----------------------------------------------------------------
 
-class _StatsGrid extends StatelessWidget {
-  const _StatsGrid({required this.state});
+class _StatsPanel extends StatelessWidget {
+  const _StatsPanel({required this.state});
 
   final ProfileState state;
 
   @override
   Widget build(BuildContext context) {
     final s = state.stats;
-    final String winRate = '${(s.winRate * 100).round()}%';
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    final Color primary = isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight;
+    final Color muted = isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight;
+    final double rate = s.winRate.clamp(0.0, 1.0);
 
-    Widget row(List<(String, String)> items) => Row(
-          children: [
-            for (int i = 0; i < items.length; i++) ...[
-              if (i > 0) SizedBox(width: AppSpacing.sm),
-              Expanded(child: StatTile(value: items[i].$1, label: items[i].$2)),
+    Widget line(String label, String value) => Padding(
+          padding: EdgeInsets.symmetric(vertical: 4.h),
+          child: Row(
+            children: [
+              Expanded(child: Text(label, style: AppTextStyles.body(muted))),
+              Text(value, style: AppTextStyles.numeric(primary, size: 16)),
             ],
-          ],
+          ),
         );
 
     return Column(
       children: [
-        row([('${s.gamesPlayed}', 'Played'), ('${s.wins}', 'Wins'), ('${s.losses}', 'Losses')]),
+        AppSurface(
+          padding: EdgeInsets.all(AppSpacing.md + 2),
+          child: Row(
+            children: [
+              // Win-rate ring.
+              SizedBox(
+                width: 96.w,
+                height: 96.w,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    SizedBox.expand(
+                      child: CircularProgressIndicator(
+                        value: rate,
+                        strokeWidth: 8,
+                        strokeCap: StrokeCap.round,
+                        color: AppColors.gold,
+                        backgroundColor: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.07),
+                      ),
+                    ),
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text('${(rate * 100).round()}%', style: AppTextStyles.numeric(primary, size: 22)),
+                        Text('WIN RATE', style: AppTextStyles.overline(muted).copyWith(fontSize: 8.5.sp)),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(width: AppSpacing.lg),
+              Expanded(
+                child: Column(
+                  children: [
+                    line('Matches played', '${s.gamesPlayed}'),
+                    const Divider(),
+                    line('Wins', '${s.wins}'),
+                    const Divider(),
+                    line('Losses', '${s.losses}'),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
         SizedBox(height: AppSpacing.sm),
-        row([(winRate, 'Win rate'), ('${s.currentStreak}', 'Streak'), ('${s.bestStreak}', 'Best streak')]),
+        Row(
+          children: [
+            Expanded(
+              child: StatTile(icon: Icons.local_fire_department_outlined, value: '${s.currentStreak}', label: 'Streak'),
+            ),
+            SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: StatTile(icon: Icons.military_tech_outlined, value: '${s.bestStreak}', label: 'Best streak'),
+            ),
+          ],
+        ),
       ],
     );
   }
@@ -259,31 +393,53 @@ class _AchievementRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool unlocked = state.unlocked.contains(achievement);
-    final ColorScheme scheme = Theme.of(context).colorScheme;
-    final Color dim = scheme.onSurface.withValues(alpha: 0.45);
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    final Color primary = isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight;
+    final Color dim = (isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight).withValues(alpha: unlocked ? 1 : 0.7);
 
     return Padding(
       padding: EdgeInsets.only(bottom: AppSpacing.sm),
       child: AppSurface(
+        highlight: unlocked,
+        padding: EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.md - 2),
         child: Row(
           children: [
-            Icon(unlocked ? achievement.icon : Icons.lock_outline, color: unlocked ? AppColors.gold : dim),
+            Container(
+              width: 46.w,
+              height: 46.w,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: unlocked ? AppColors.goldGradient : null,
+                color: unlocked ? null : (isDark ? Colors.white.withValues(alpha: 0.07) : Colors.black.withValues(alpha: 0.06)),
+              ),
+              child: Icon(
+                unlocked ? achievement.icon : Icons.lock_outline_rounded,
+                size: 22.sp,
+                color: unlocked ? AppColors.navyDeep : dim,
+              ),
+            ),
             SizedBox(width: AppSpacing.md),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    achievement.title,
-                    style: AppTextStyles.bodyStrong(unlocked ? scheme.onSurface : dim),
-                  ),
+                  Text(achievement.title, style: AppTextStyles.bodyStrong(unlocked ? primary : dim)),
+                  SizedBox(height: 2.h),
                   Text(achievement.description, style: AppTextStyles.caption(dim)),
                 ],
               ),
             ),
-            Text(
-              '${achievement.reward.label} back',
-              style: AppTextStyles.caption(unlocked ? AppColors.gold : dim),
+            SizedBox(width: AppSpacing.sm),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text('REWARD', style: AppTextStyles.overline(dim).copyWith(fontSize: 8.5.sp)),
+                SizedBox(height: 2.h),
+                Text(
+                  '${achievement.reward.label} back',
+                  style: AppTextStyles.caption(unlocked ? AppColors.goldText(context) : dim).copyWith(fontWeight: FontWeight.w700),
+                ),
+              ],
             ),
           ],
         ),
@@ -301,17 +457,21 @@ class _CardBackPicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      spacing: AppSpacing.md,
-      runSpacing: AppSpacing.md,
-      children: [
-        for (final CardBackStyle style in CardBackStyle.values)
-          _CardBackChoice(
-            style: style,
-            selected: state.profile.cardBack == style,
-            unlocked: state.isCardBackUnlocked(style),
-          ),
-      ],
+    return AppSurface(
+      padding: EdgeInsets.symmetric(vertical: AppSpacing.md, horizontal: AppSpacing.sm),
+      child: Wrap(
+        alignment: WrapAlignment.spaceEvenly,
+        spacing: AppSpacing.sm,
+        runSpacing: AppSpacing.md,
+        children: [
+          for (final CardBackStyle style in CardBackStyle.values)
+            _CardBackChoice(
+              style: style,
+              selected: state.profile.cardBack == style,
+              unlocked: state.isCardBackUnlocked(style),
+            ),
+        ],
+      ),
     );
   }
 }
@@ -325,7 +485,8 @@ class _CardBackChoice extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color onSurface = Theme.of(context).colorScheme.onSurface;
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    final Color muted = isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight;
 
     return GestureDetector(
       onTap: () {
@@ -339,25 +500,53 @@ class _CardBackChoice extends StatelessWidget {
             );
         }
       },
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Stack(
-            alignment: Alignment.center,
-            children: [
-              Opacity(
-                opacity: unlocked ? 1 : 0.35,
-                child: CardBackScope(
-                  style: style,
-                  child: PlayingCardView(card: null, faceDown: true, width: 44, selected: selected),
-                ),
+      child: SizedBox(
+        width: 64.w,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(5),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12.r),
+                color: selected ? AppColors.gold.withValues(alpha: 0.14) : Colors.transparent,
+                border: Border.all(color: selected ? AppColors.gold : Colors.transparent, width: 1.5),
               ),
-              if (!unlocked) const Icon(Icons.lock, color: Colors.white),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(style.label, style: AppTextStyles.caption(selected ? AppColors.gold : onSurface)),
-        ],
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Opacity(
+                    opacity: unlocked ? 1 : 0.35,
+                    child: CardBackScope(
+                      style: style,
+                      child: const PlayingCardView(card: null, faceDown: true, width: 44),
+                    ),
+                  ),
+                  if (!unlocked) Icon(Icons.lock_rounded, color: Colors.white, size: 20.sp),
+                  if (selected)
+                    Positioned(
+                      right: 0,
+                      top: 0,
+                      child: Container(
+                        padding: const EdgeInsets.all(2),
+                        decoration: const BoxDecoration(shape: BoxShape.circle, color: AppColors.gold),
+                        child: Icon(Icons.check_rounded, size: 12.sp, color: AppColors.navyDeep),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            SizedBox(height: 6.h),
+            Text(
+              style.label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTextStyles.caption(selected ? AppColors.goldText(context) : muted).copyWith(
+                fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -376,11 +565,24 @@ class _History extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ColorScheme scheme = Theme.of(context).colorScheme;
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    final Color primary = isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight;
+    final Color muted = isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight;
+
     if (history.isEmpty) {
-      return Text(
-        'No matches yet — finish a game and it will show up here.',
-        style: AppTextStyles.body(scheme.onSurface.withValues(alpha: 0.6)),
+      return AppSurface(
+        padding: EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          children: [
+            Icon(Icons.style_outlined, size: 30.sp, color: muted.withValues(alpha: 0.6)),
+            SizedBox(height: AppSpacing.sm),
+            Text(
+              'No matches yet — finish a game and it will show up here.',
+              textAlign: TextAlign.center,
+              style: AppTextStyles.body(muted),
+            ),
+          ],
+        ),
       );
     }
 
@@ -390,29 +592,35 @@ class _History extends StatelessWidget {
           Padding(
             padding: EdgeInsets.only(bottom: AppSpacing.sm),
             child: AppSurface(
+              padding: EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.md - 2),
               child: Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    width: 52.w,
+                    padding: EdgeInsets.symmetric(vertical: 5.h),
+                    alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: (r.won ? AppColors.success : AppColors.danger).withValues(alpha: 0.18),
-                      borderRadius: BorderRadius.circular(999),
+                      color: (r.won ? AppColors.success : AppColors.danger).withValues(alpha: 0.16),
+                      borderRadius: BorderRadius.circular(AppRadius.pill),
                     ),
                     child: Text(
                       r.won ? 'WIN' : 'LOSS',
-                      style: AppTextStyles.caption(r.won ? AppColors.success : AppColors.danger),
+                      style: AppTextStyles.overline(r.won ? AppColors.success : AppColors.danger),
                     ),
                   ),
                   SizedBox(width: AppSpacing.md),
                   Expanded(
-                    child: Text(
-                      '${r.ourScore} – ${r.theirScore}  ·  ${r.difficulty.label}  ·  ${r.rounds} rounds',
-                      style: AppTextStyles.body(scheme.onSurface),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('${r.ourScore} – ${r.theirScore}', style: AppTextStyles.numeric(primary, size: 16)),
+                        Text('${r.difficulty.label} · ${r.rounds} rounds', style: AppTextStyles.caption(muted)),
+                      ],
                     ),
                   ),
                   Text(
                     '${_months[r.playedAt.month - 1]} ${r.playedAt.day}',
-                    style: AppTextStyles.caption(scheme.onSurface.withValues(alpha: 0.6)),
+                    style: AppTextStyles.caption(muted),
                   ),
                 ],
               ),
