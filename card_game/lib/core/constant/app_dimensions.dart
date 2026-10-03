@@ -14,8 +14,10 @@ abstract class AppSpacing {
 }
 
 abstract class AppRadius {
-  static double get sm => 6.r;
-  static double get md => 10.r;
-  static double get lg => 16.r;
+  static double get xs => 4.r;
+  static double get sm => 8.r;
+  static double get md => 12.r;
+  static double get lg => 18.r;
+  static double get xl => 26.r;
   static double get pill => 999.r;
 }
