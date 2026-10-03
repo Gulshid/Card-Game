@@ -8,7 +8,7 @@ import 'package:card_game/features/home/bloc/resume_match_cubit.dart';
 import 'package:card_game/features/multiplayer/data/online_prefs.dart';
 import 'package:card_game/features/multiplayer/data/online_session.dart';
 import 'package:card_game/features/multiplayer/data/online_socket.dart';
-import 'package:card_game/features/profile/data/profile_repository_impl.dart';
+import 'package:card_game/features/Profile/data/profile_repository_impl.dart';
 import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:card_game/features/Profile/bloc/profile_cubit.dart';   // capital
