@@ -5,10 +5,10 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../utils/hand_sorter.dart';
 import 'playing_card_view.dart';
 
-/// The human's own hand: a horizontal, overlapping fan of tappable
-/// cards. Legal cards are full-opacity and lift slightly when tapped;
-/// illegal ones are dimmed so the player can see their options at a
-/// glance without reading the rules.
+/// The human's own hand: a gently arced, overlapping fan of tappable
+/// cards. Legal cards rise slightly and carry a thin gold edge; illegal
+/// ones are dimmed, so the player can see their options at a glance
+/// without reading the rules.
 ///
 /// Tapping a legal card plays a brief "lift and release" animation —
 /// the card scales up and starts fading — *before* [onCardTap] fires,
@@ -22,7 +22,7 @@ class PlayerHandFan extends StatefulWidget {
     required this.onCardTap,
     super.key,
     this.enabled = true,
-    this.cardWidth = 46,
+    this.cardWidth = 50,
   });
 
   final List<PlayingCard> cards;
@@ -37,6 +37,9 @@ class PlayerHandFan extends StatefulWidget {
 
 class _PlayerHandFanState extends State<PlayerHandFan> {
   static const Duration _playOutDuration = Duration(milliseconds: 150);
+
+  /// Total tilt (radians) at the outermost cards of a full hand.
+  static const double _maxTilt = 0.11;
 
   PlayingCard? _playingCard;
 
@@ -57,21 +60,23 @@ class _PlayerHandFanState extends State<PlayerHandFan> {
   Widget build(BuildContext context) {
     final List<PlayingCard> sorted = HandSorter.sorted(widget.cards);
     final double overlap = widget.cardWidth.w * 0.62;
+    final int n = sorted.length;
+    final double mid = (n - 1) / 2;
 
     return SizedBox(
-      height: widget.cardWidth.w * 1.42 + 14.h,
+      height: widget.cardWidth.w * 1.42 + 38.h,
       child: Center(
         child: SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           physics: const BouncingScrollPhysics(),
-          padding: EdgeInsets.symmetric(horizontal: 12.w),
+          padding: EdgeInsets.fromLTRB(14.w, 0, 14.w, 14.h),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              for (int i = 0; i < sorted.length; i++)
+              for (int i = 0; i < n; i++)
                 Padding(
-                  padding: EdgeInsets.only(right: i == sorted.length - 1 ? 0 : (widget.cardWidth.w - overlap)),
-                  child: _buildCard(sorted[i]),
+                  padding: EdgeInsets.only(right: i == n - 1 ? 0 : (widget.cardWidth.w - overlap)),
+                  child: _arc(i, mid, _buildCard(sorted[i])),
                 ),
             ],
           ),
@@ -80,9 +85,24 @@ class _PlayerHandFanState extends State<PlayerHandFan> {
     );
   }
 
+  /// Positions a card on the arc: tilted outward and dropped slightly
+  /// toward the edges.
+  Widget _arc(int i, double mid, Widget child) {
+    final double t = mid == 0 ? 0 : (i - mid) / mid; // -1 … 1
+    return Transform.translate(
+      offset: Offset(0, t * t * 9.h),
+      child: Transform.rotate(
+        angle: t * _maxTilt,
+        alignment: Alignment.bottomCenter,
+        child: child,
+      ),
+    );
+  }
+
   Widget _buildCard(PlayingCard card) {
     final bool isLegal = widget.isLegal(card);
-    final bool tapEnabled = widget.enabled && isLegal && _playingCard == null;
+    final bool playable = widget.enabled && isLegal;
+    final bool tapEnabled = playable && _playingCard == null;
     final bool isPlayingOut = _playingCard == card;
 
     return GestureDetector(
@@ -92,16 +112,22 @@ class _PlayerHandFanState extends State<PlayerHandFan> {
         button: true,
         enabled: tapEnabled,
         label: '$card',
-        child: AnimatedScale(
-          duration: _playOutDuration,
-          scale: isPlayingOut ? 1.25 : 1.0,
-          child: AnimatedOpacity(
+        child: AnimatedSlide(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOut,
+          offset: playable ? const Offset(0, -0.09) : Offset.zero,
+          child: AnimatedScale(
             duration: _playOutDuration,
-            opacity: isPlayingOut ? 0.0 : 1.0,
-            child: PlayingCardView(
-              card: card,
-              width: widget.cardWidth,
-              dimmed: !isLegal || !widget.enabled,
+            scale: isPlayingOut ? 1.25 : 1.0,
+            child: AnimatedOpacity(
+              duration: _playOutDuration,
+              opacity: isPlayingOut ? 0.0 : 1.0,
+              child: PlayingCardView(
+                card: card,
+                width: widget.cardWidth,
+                dimmed: !isLegal || !widget.enabled,
+                highlight: playable,
+              ),
             ),
           ),
         ),
