@@ -51,7 +51,10 @@ class _SplashPageState extends State<SplashPage> {
       child: Scaffold(
         backgroundColor: Colors.transparent,
         body: SafeArea(
-          child: Column(
+          child: SizedBox(
+            width: double.infinity,
+            child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const Spacer(flex: 5),
               // Emblem: scales + fades in.
@@ -113,6 +116,7 @@ class _SplashPageState extends State<SplashPage> {
               ),
               SizedBox(height: 40.h),
             ],
+          ),
           ),
         ),
       ),
