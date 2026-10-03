@@ -5,14 +5,13 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 
-/// The app's single primary call-to-action button style ("Play",
-/// "Confirm bid", "Save"). Secondary/tertiary actions should use a
-/// plain `OutlinedButton`/`TextButton` via the theme instead of a new
-/// widget — this one is reserved for the one primary action per screen.
+/// The app's single primary call-to-action: a champagne-gold gradient
+/// button with a soft glow and a press-down animation. Reserved for the
+/// one primary action per screen — use [SecondaryButton] for the rest.
 ///
 /// Long labels scale down to fit the button's width instead of
 /// overflowing (the content is wrapped in a `FittedBox`).
-class PrimaryButton extends StatelessWidget {
+class PrimaryButton extends StatefulWidget {
   const PrimaryButton({
     required this.label,
     required this.onPressed,
@@ -27,39 +26,94 @@ class PrimaryButton extends StatelessWidget {
   final IconData? icon;
 
   @override
+  State<PrimaryButton> createState() => _PrimaryButtonState();
+}
+
+class _PrimaryButtonState extends State<PrimaryButton> {
+  bool _pressed = false;
+
+  @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      height: 48.h,
-      child: ElevatedButton(
-        onPressed: isLoading ? null : onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.gold,
-          foregroundColor: AppColors.navy,
-          disabledBackgroundColor: AppColors.gold.withValues(alpha: 0.5),
-          padding: EdgeInsets.symmetric(horizontal: AppSpacing.md),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
+    final bool enabled = widget.onPressed != null;
+    final bool tappable = enabled && !widget.isLoading;
+    final BorderRadius br = BorderRadius.circular(AppRadius.md + 2);
+
+    final Widget content = widget.isLoading
+        ? SizedBox(
+            width: 20.w,
+            height: 20.w,
+            child: const CircularProgressIndicator(strokeWidth: 2.4, color: AppColors.navyDeep),
+          )
+        : FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (widget.icon != null) ...[
+                  Icon(widget.icon, size: 20.sp, color: AppColors.navyDeep),
+                  SizedBox(width: AppSpacing.sm),
+                ],
+                Text(widget.label, maxLines: 1, softWrap: false, style: AppTextStyles.button(AppColors.navyDeep)),
+              ],
+            ),
+          );
+
+    return AnimatedScale(
+      scale: _pressed && tappable ? 0.97 : 1.0,
+      duration: const Duration(milliseconds: 90),
+      curve: Curves.easeOut,
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: enabled ? AppColors.goldGradient : null,
+          color: enabled ? null : AppColors.gold.withValues(alpha: 0.25),
+          borderRadius: br,
+          boxShadow: enabled ? AppShadows.goldGlow(0.30) : null,
         ),
-        child: isLoading
-            ? SizedBox(
-                width: 20.w,
-                height: 20.w,
-                child: const CircularProgressIndicator(strokeWidth: 2, color: AppColors.navy),
-              )
-            : FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    if (icon != null) ...[
-                      Icon(icon, size: 18.sp, color: AppColors.navy),
-                      SizedBox(width: AppSpacing.sm),
-                    ],
-                    Text(label, maxLines: 1, softWrap: false, style: AppTextStyles.button(AppColors.navy)),
-                  ],
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: br,
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: tappable ? widget.onPressed : null,
+            onHighlightChanged: (v) => setState(() => _pressed = v),
+            splashColor: Colors.white.withValues(alpha: 0.28),
+            highlightColor: Colors.white.withValues(alpha: 0.10),
+            child: Stack(
+              children: [
+                // Glossy top highlight.
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  top: 0,
+                  height: 24.h,
+                  child: IgnorePointer(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.white.withValues(alpha: enabled ? 0.30 : 0.0),
+                            Colors.white.withValues(alpha: 0.0),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
-              ),
+                SizedBox(
+                  width: double.infinity,
+                  height: 54.h,
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                    child: Center(child: content),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

@@ -2,11 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
 
-/// App-branded loading spinner — always gold, regardless of theme,
-/// so it reads consistently over both light and dark (and, later,
-/// the felt-green table).
+/// App-branded loading spinner — always gold, regardless of theme, so it
+/// reads consistently over light, dark and the felt-green table.
 class AppLoadingIndicator extends StatelessWidget {
-  const AppLoadingIndicator({super.key, this.size = 28});
+  const AppLoadingIndicator({super.key, this.size = 30});
 
   final double size;
 
@@ -15,7 +14,12 @@ class AppLoadingIndicator extends StatelessWidget {
     return SizedBox(
       width: size,
       height: size,
-      child: const CircularProgressIndicator(strokeWidth: 2.5, color: AppColors.gold),
+      child: CircularProgressIndicator(
+        strokeWidth: 2.6,
+        strokeCap: StrokeCap.round,
+        color: AppColors.gold,
+        backgroundColor: AppColors.gold.withValues(alpha: 0.18),
+      ),
     );
   }
 }
