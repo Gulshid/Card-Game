@@ -1,6 +1,8 @@
 import 'package:card_game/core/audio/audio_service.dart';
 import 'package:card_game/core/di/injection_container.dart';
 import 'package:card_game/core/services/haptics_service.dart';
+import 'package:card_game/core/theme/app_colors.dart';
+import 'package:card_game/core/theme/app_text_styles.dart';
 import 'package:card_game/features/Profile/domain/models/achievements.dart';
 import 'package:card_game/features/game/domain/ai/ai_difficulty.dart';
 import 'package:card_game/features/game/domain/models/saved_match.dart';
@@ -137,69 +139,128 @@ class _GameTableViewState extends State<GameTableView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F3D2C), // felt
-      body: SafeArea(
-        child: BlocConsumer<TableCubit, GameUiState>(
-          listenWhen: (prev, curr) => curr.hint != null && curr.hintNonce != prev.hintNonce,
-          listener: (context, state) {
-            ScaffoldMessenger.of(context)
-              ..hideCurrentSnackBar()
-              ..showSnackBar(SnackBar(content: Text(state.hint!), duration: const Duration(seconds: 2)));
-          },
-          builder: (context, state) {
-            final cubit = context.read<TableCubit>();
-            _maybeTriggerDealAnimation(state.game.roundNumber);
+      backgroundColor: AppColors.feltDeep,
+      body: Stack(
+        children: [
+          const Positioned.fill(child: _FeltBackground()),
+          SafeArea(
+            child: BlocConsumer<TableCubit, GameUiState>(
+              listenWhen: (prev, curr) => curr.hint != null && curr.hintNonce != prev.hintNonce,
+              listener: (context, state) {
+                // Floats above the player's hand instead of covering it.
+                ScaffoldMessenger.of(context)
+                  ..hideCurrentSnackBar()
+                  ..showSnackBar(
+                    SnackBar(
+                      content: Text(state.hint!, textAlign: TextAlign.center),
+                      duration: const Duration(seconds: 2),
+                      behavior: SnackBarBehavior.floating,
+                      margin: EdgeInsets.fromLTRB(28.w, 0, 28.w, 170.h),
+                    ),
+                  );
+              },
+              builder: (context, state) {
+                final cubit = context.read<TableCubit>();
+                _maybeTriggerDealAnimation(state.game.roundNumber);
 
-            return Stack(
-              children: [
-                Column(
+                return Stack(
                   children: [
-                    TurnScoreHud(uiState: state),
-                    Expanded(
-                      child: LayoutBuilder(
-                        builder: (context, constraints) => _TableFelt(uiState: state),
-                      ),
+                    Column(
+                      children: [
+                        TurnScoreHud(uiState: state),
+                        Expanded(
+                          child: LayoutBuilder(
+                            builder: (context, constraints) => _TableFelt(uiState: state),
+                          ),
+                        ),
+                        _SelfBar(uiState: state),
+                        PlayerHandFan(
+                          cards: state.game.hands[kHumanSeat] ?? const [],
+                          enabled: state.canHumanAct && state.game.phase == GamePhase.playing,
+                          isLegal: (card) => SpadesRulesEngine.isValidMove(
+                            state.game,
+                            PlayCardMove(seat: kHumanSeat, card: card),
+                          ),
+                          onCardTap: cubit.playCard,
+                        ),
+                        SizedBox(height: 4.h),
+                      ],
                     ),
-                    PlayerHandFan(
-                      cards: state.game.hands[kHumanSeat] ?? const [],
-                      enabled: state.canHumanAct && state.game.phase == GamePhase.playing,
-                      isLegal: (card) => SpadesRulesEngine.isValidMove(
-                        state.game,
-                        PlayCardMove(seat: kHumanSeat, card: card),
+                    if (state.canHumanAct && state.game.phase == GamePhase.bidding)
+                      BidOverlay(onBid: cubit.submitBid),
+                    if (state.showRoundSummary)
+                      RoundSummarySheet(uiState: state, onContinue: cubit.nextRound),
+                    if (state.showMatchResult)
+                      MatchResultSheet(
+                        uiState: state,
+                        onPlayAgain: widget.onPlayAgain ?? cubit.restart,
+                        onHome: widget.onHome ?? () => context.pop(),
+                        playAgainLabel: widget.playAgainLabel,
+                        homeLabel: widget.homeLabel,
                       ),
-                      onCardTap: cubit.playCard,
-                    ),
-                    SizedBox(height: 8.h),
+                    if (_showDealAnimation)
+                      DealAnimationOverlay(
+                        key: ValueKey('deal-${state.game.roundNumber}'),
+                        humanCards: state.game.hands[kHumanSeat] ?? const [],
+                        onComplete: () {
+                          if (mounted) setState(() => _showDealAnimation = false);
+                        },
+                      ),
+                    if (widget.overlay != null) widget.overlay!,
                   ],
-                ),
-                if (state.canHumanAct && state.game.phase == GamePhase.bidding)
-                  BidOverlay(onBid: cubit.submitBid),
-                if (state.showRoundSummary)
-                  RoundSummarySheet(uiState: state, onContinue: cubit.nextRound),
-                if (state.showMatchResult)
-                  MatchResultSheet(
-                    uiState: state,
-                    onPlayAgain: widget.onPlayAgain ?? cubit.restart,
-                    onHome: widget.onHome ?? () => context.pop(),
-                    playAgainLabel: widget.playAgainLabel,
-                    homeLabel: widget.homeLabel,
-                  ),
-                if (_showDealAnimation)
-                  DealAnimationOverlay(
-                    key: ValueKey('deal-${state.game.roundNumber}'),
-                    humanCards: state.game.hands[kHumanSeat] ?? const [],
-                    onComplete: () {
-                      if (mounted) setState(() => _showDealAnimation = false);
-                    },
-                  ),
-                if (widget.overlay != null) widget.overlay!,
-              ],
-            );
-          },
-        ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
+}
+
+// ---- Felt ---------------------------------------------------------------
+
+/// Emerald baize: a lit radial gradient, a faint woven texture and a
+/// dark vignette toward the edges. Painted once (RepaintBoundary).
+class _FeltBackground extends StatelessWidget {
+  const _FeltBackground();
+
+  @override
+  Widget build(BuildContext context) {
+    return RepaintBoundary(
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          const DecoratedBox(decoration: BoxDecoration(gradient: AppColors.feltGradient)),
+          CustomPaint(painter: _FeltWeavePainter()),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: RadialGradient(
+                radius: 1.15,
+                colors: [Colors.transparent, Colors.black.withValues(alpha: 0.50)],
+                stops: const [0.55, 1.0],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FeltWeavePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final Paint p = Paint()
+      ..color = Colors.white.withValues(alpha: 0.018)
+      ..strokeWidth = 1;
+    for (double x = -size.height; x < size.width; x += 5) {
+      canvas.drawLine(Offset(x, 0), Offset(x + size.height, size.height), p);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 /// North/East/West opponents and the central trick, laid out with plain
@@ -213,38 +274,36 @@ class _TableFelt extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final game = uiState.game;
-
     return Stack(
       alignment: Alignment.center,
       children: [
         Positioned(
-          top: 8.h,
-          child: _OpponentSlot(
-            seat: Seat.north,
-            uiState: uiState,
-            vertical: false,
-          ),
+          top: 6.h,
+          child: _OpponentSlot(seat: Seat.north, uiState: uiState, vertical: false),
         ),
         Positioned(
           right: 4.w,
-          child: _OpponentSlot(seat: Seat.east, uiState: uiState, vertical: true),
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: _OpponentSlot(seat: Seat.east, uiState: uiState, vertical: true),
+          ),
         ),
         Positioned(
           left: 4.w,
-          child: _OpponentSlot(seat: Seat.west, uiState: uiState, vertical: true),
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: _OpponentSlot(seat: Seat.west, uiState: uiState, vertical: true),
+          ),
         ),
         TrickArea(trick: uiState.displayTrick, winner: uiState.displayWinner),
-        if (game.phase == GamePhase.bidding)
-          Positioned(
-            bottom: 4.h,
-            child: _BidBadges(uiState: uiState),
-          ),
       ],
     );
   }
 }
 
+/// An opponent's name plate (team-coloured initial, name, bid progress)
+/// with their face-down fan beside/below it. The plate glows and pulses
+/// while it is that seat's turn.
 class _OpponentSlot extends StatelessWidget {
   const _OpponentSlot({required this.seat, required this.uiState, required this.vertical});
 
@@ -254,57 +313,125 @@ class _OpponentSlot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final name = uiState.players[seat]?.name ?? seat.name;
-    final isTurn = uiState.game.turn == seat;
-    final handCount = uiState.game.hands[seat]?.length ?? 0;
+    final game = uiState.game;
+    final String name = uiState.players[seat]?.name ?? seat.name;
+    final bool live = game.phase == GamePhase.bidding || game.phase == GamePhase.playing;
+    final bool isTurn = live && game.turn == seat;
+    final bool thinking = isTurn && uiState.isBotThinking;
+    final int handCount = game.hands[seat]?.length ?? 0;
 
-    // Pulses gently while it's this seat's turn, so the eye is drawn to
-    // who's acting without anything jarring — stays static otherwise.
-    final label = PulseGlow(
+    final int? bid = game.bids[seat];
+    final int won = game.tricksWonBySeat[seat] ?? 0;
+    final String? status = bid == null
+        ? (game.phase == GamePhase.bidding && isTurn ? 'Bidding…' : null)
+        : (bid == 0 ? 'Nil · won $won' : 'Won $won/$bid');
+
+    final bool usTeam = seat.team == 0;
+    final String initial = name.isEmpty ? '?' : String.fromCharCode(name.runes.first).toUpperCase();
+
+    final Widget plate = PulseGlow(
       active: isTurn,
-      child: Text(
-        isTurn && uiState.isBotThinking ? '$name…' : name,
-        style: TextStyle(
-          color: isTurn ? const Color(0xFFC79A3D) : Colors.white70,
-          fontWeight: isTurn ? FontWeight.w700 : FontWeight.w400,
-          fontSize: 11.sp,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        constraints: BoxConstraints(maxWidth: 98.w),
+        padding: EdgeInsets.fromLTRB(5.w, 4.h, 11.w, 4.h),
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.34),
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(
+            color: isTurn ? AppColors.gold : Colors.white.withValues(alpha: 0.12),
+            width: isTurn ? 1.4 : 1,
+          ),
+          boxShadow: isTurn ? AppShadows.goldGlow(0.30) : null,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircleAvatar(
+              radius: 12.r,
+              backgroundColor: usTeam ? AppColors.gold : AppColors.blue,
+              child: Text(
+                initial,
+                style: AppTextStyles.caption(usTeam ? AppColors.navyDeep : Colors.white)
+                    .copyWith(fontWeight: FontWeight.w800, fontSize: 11.sp),
+              ),
+            ),
+            SizedBox(width: 6.w),
+            Flexible(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    thinking ? '$name…' : name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.caption(isTurn ? AppColors.goldLight : Colors.white)
+                        .copyWith(fontWeight: FontWeight.w800, fontSize: 11.sp),
+                  ),
+                  if (status != null)
+                    Text(
+                      status,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.caption(Colors.white60).copyWith(fontSize: 9.5.sp),
+                    ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
 
-    final fan = OpponentHandView(
+    final Widget fan = OpponentHandView(
       cardCount: handCount,
       vertical: vertical,
       cardWidth: 26,
-      isThinking: isTurn && uiState.isBotThinking,
+      isThinking: thinking,
     );
 
-    return vertical
-        ? Column(mainAxisSize: MainAxisSize.min, children: [fan, SizedBox(height: 4.h), label])
-        : Column(mainAxisSize: MainAxisSize.min, children: [label, SizedBox(height: 4.h), fan]);
+    return Column(mainAxisSize: MainAxisSize.min, children: [plate, SizedBox(height: 6.h), fan]);
   }
 }
 
-class _BidBadges extends StatelessWidget {
-  const _BidBadges({required this.uiState});
+/// A slim status line just above the player's hand: their own bid and
+/// tricks won, and whether spades have been broken.
+class _SelfBar extends StatelessWidget {
+  const _SelfBar({required this.uiState});
 
   final GameUiState uiState;
 
   @override
   Widget build(BuildContext context) {
-    final bids = uiState.game.bids;
-    return Wrap(
-      spacing: 8.w,
-      children: [
-        for (final seat in Seat.values)
-          if (bids[seat] != null)
-            Chip(
-              label: Text('${uiState.players[seat]?.name ?? seat.name}: ${bids[seat] == 0 ? "Nil" : bids[seat]}'),
-              backgroundColor: Colors.black.withValues(alpha: 0.3),
-              labelStyle: const TextStyle(color: Colors.white, fontSize: 10),
-              visualDensity: VisualDensity.compact,
-            ),
-      ],
+    final game = uiState.game;
+    final bool live = game.phase == GamePhase.bidding || game.phase == GamePhase.playing;
+    final int? bid = game.bids[kHumanSeat];
+    final int won = game.tricksWonBySeat[kHumanSeat] ?? 0;
+
+    Widget pill(String text, {Color? accent}) => Container(
+          margin: EdgeInsets.symmetric(horizontal: 4.w),
+          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.30),
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(color: (accent ?? Colors.white).withValues(alpha: accent == null ? 0.12 : 0.5)),
+          ),
+          child: Text(
+            text,
+            style: AppTextStyles.caption(accent ?? Colors.white70).copyWith(fontWeight: FontWeight.w700),
+          ),
+        );
+
+    return SizedBox(
+      height: 28.h,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (live && bid != null) pill(bid == 0 ? 'Your bid: Nil · won $won' : 'Your bid: $bid · won $won/$bid'),
+          if (live && game.spadesBroken) pill('♠ broken', accent: AppColors.goldLight),
+        ],
+      ),
     );
   }
 }
