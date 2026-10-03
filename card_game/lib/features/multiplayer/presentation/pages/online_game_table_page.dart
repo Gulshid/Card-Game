@@ -5,6 +5,7 @@ import 'package:card_game/core/audio/audio_service.dart';
 import 'package:card_game/core/di/injection_container.dart';
 import 'package:card_game/core/routes/app_router.dart';
 import 'package:card_game/core/services/haptics_service.dart';
+import 'package:card_game/core/theme/app_colors.dart';
 import 'package:card_game/features/Profile/bloc/profile_cubit.dart';
 import 'package:card_game/features/Profile/bloc/profile_state.dart';
 import 'package:card_game/features/Profile/domain/models/achievements.dart';
@@ -108,8 +109,10 @@ class _OnlineGameTablePageState extends State<OnlineGameTablePage> {
     final OnlineGameCubit? cubit = _cubit;
     if (cubit == null) {
       return Scaffold(
-        backgroundColor: const Color(0xFF0F3D2C),
-        body: Center(
+        backgroundColor: AppColors.feltDeep,
+        body: DecoratedBox(
+          decoration: const BoxDecoration(gradient: AppColors.feltGradient),
+          child: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -119,6 +122,7 @@ class _OnlineGameTablePageState extends State<OnlineGameTablePage> {
               const SizedBox(height: 16),
               TextButton(onPressed: _exitToLobby, child: const Text('Cancel')),
             ],
+          ),
           ),
         ),
       );
