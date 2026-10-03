@@ -12,10 +12,10 @@ class ConfettiBurst extends StatefulWidget {
     this.particleCount = 60,
     this.duration = const Duration(milliseconds: 1600),
     this.colors = const [
-      Color(0xFFC79A3D), // gold
-      Color(0xFF2451B5), // blue
-      Color(0xFFD85A30), // coral
-      Color(0xFF1E8E5A), // green
+      Color(0xFFD4A94F), // gold
+      Color(0xFF6C93F0), // blue
+      Color(0xFFF2D58B), // light gold
+      Color(0xFF2FBF86), // green
       Colors.white,
     ],
   });

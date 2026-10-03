@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:card_game/Shared/widgets/glass_icon_button.dart';
 import 'package:card_game/Shared/widgets/primary_button.dart';
 import 'package:card_game/core/constant/app_dimensions.dart';
 import 'package:card_game/core/theme/app_colors.dart';
@@ -57,7 +58,7 @@ class OnlineTableOverlay extends StatelessWidget {
           return Stack(
             children: [
               Positioned(
-                top: 54.h,
+                top: 80.h,
                 left: 8.w,
                 right: 8.w,
                 child: Column(
@@ -66,10 +67,12 @@ class OnlineTableOverlay extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        IconButton(
+                        GlassIconButton(
                           tooltip: 'Leave match',
-                          visualDensity: VisualDensity.compact,
-                          icon: const Icon(Icons.exit_to_app, color: Colors.white70),
+                          icon: Icons.logout_rounded,
+                          size: 38,
+                          forceDark: true,
+                          color: Colors.white70,
                           onPressed: onLeave,
                         ),
                         const Spacer(),
@@ -114,11 +117,12 @@ class _Pill extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: EdgeInsets.only(top: 4.h),
-      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 7.h),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.55),
+        color: Colors.black.withValues(alpha: 0.62),
         borderRadius: BorderRadius.circular(AppRadius.pill),
-        border: Border.all(color: color.withValues(alpha: 0.8)),
+        border: Border.all(color: color.withValues(alpha: 0.85)),
+        boxShadow: [BoxShadow(color: color.withValues(alpha: 0.20), blurRadius: 12)],
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -157,13 +161,23 @@ class _EmoteButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return PopupMenuButton<String>(
-      tooltip: 'Send an emote',
-      icon: const Icon(Icons.emoji_emotions_outlined, color: Colors.white70),
-      onSelected: onSelected,
-      itemBuilder: (_) => [
-        for (final String id in kEmoteIds) PopupMenuItem<String>(value: id, child: Text(kEmoteLabels[id] ?? id)),
-      ],
+    return Container(
+      width: 38.w,
+      height: 38.w,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: Colors.black.withValues(alpha: 0.32),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+      ),
+      child: PopupMenuButton<String>(
+        tooltip: 'Send an emote',
+        padding: EdgeInsets.zero,
+        icon: Icon(Icons.emoji_emotions_outlined, color: Colors.white70, size: 19.sp),
+        onSelected: onSelected,
+        itemBuilder: (_) => [
+          for (final String id in kEmoteIds) PopupMenuItem<String>(value: id, child: Text(kEmoteLabels[id] ?? id)),
+        ],
+      ),
     );
   }
 }
@@ -204,13 +218,21 @@ class _TurnClockState extends State<_TurnClock> {
 
     final int left = ((deadline - widget.session.serverNowMs) / 1000).ceil().clamp(0, 999);
     final bool urgent = left <= 10;
-    return Padding(
-      padding: EdgeInsets.only(right: 4.w),
+    final Color tone = urgent ? AppColors.danger : Colors.white70;
+    return Container(
+      margin: EdgeInsets.only(right: 8.w),
+      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.32),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+        border: Border.all(color: urgent ? AppColors.danger.withValues(alpha: 0.8) : Colors.white.withValues(alpha: 0.12)),
+      ),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.timer_outlined, size: 16.sp, color: urgent ? AppColors.danger : Colors.white70),
+          Icon(Icons.timer_outlined, size: 16.sp, color: tone),
           SizedBox(width: 4.w),
-          Text('${left}s', style: AppTextStyles.bodyStrong(urgent ? AppColors.danger : Colors.white70)),
+          Text('${left}s', style: AppTextStyles.numeric(tone, size: 14)),
         ],
       ),
     );
@@ -235,18 +257,22 @@ class _EndedNotice extends StatelessWidget {
         margin: EdgeInsets.symmetric(horizontal: 24.w),
         padding: EdgeInsets.all(AppSpacing.lg),
         decoration: BoxDecoration(
-          color: AppColors.navy,
-          borderRadius: BorderRadius.circular(AppRadius.lg),
+          gradient: const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFF1A2A50), Color(0xFF0E1830)],
+          ),
+          borderRadius: BorderRadius.circular(AppRadius.xl),
           border: Border.all(color: AppColors.gold.withValues(alpha: 0.4)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.info_outline, color: AppColors.gold, size: 40.sp),
+            Icon(Icons.info_outline_rounded, color: AppColors.gold, size: 40.sp),
             SizedBox(height: AppSpacing.sm),
             Text(text, textAlign: TextAlign.center, style: AppTextStyles.body(Colors.white)),
             SizedBox(height: AppSpacing.lg),
-            PrimaryButton(label: 'Back to lobby', onPressed: onExit),
+            PrimaryButton(label: 'Back to lobby', icon: Icons.arrow_back_rounded, onPressed: onExit),
           ],
         ),
       ),
